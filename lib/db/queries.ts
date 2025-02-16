@@ -170,14 +170,16 @@ export type ModulesAndLessonsMaybeComplete = {
   name: string;
   description: string | null;
   isExtraContent: boolean;
-  lessons: {
-    name: string;
-    description: string | null;
-    contentType?: 'MDX' | 'VIDEO';
-    content?: string;
-    mdxSource?: EvaluateResult;
-  }[];
+  lessons: Lesson[];
 }[];
+
+export type Lesson = {
+  name: string;
+  description: string | null;
+  contentType?: 'MDX' | 'VIDEO';
+  content?: string;
+  mdxComponent?: JSX.Element;
+};
 
 export async function getModulesAndLessonsByProductId(
   productId: string
