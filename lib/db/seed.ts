@@ -41,7 +41,8 @@ async function seed() {
       await db.insert(lessons).values([
         {
           name: `Lesson 1 of ${module.name}`,
-          content: `      ---
+          content: `      
+---
 title: Example Title
 description: This is an example .mdx file
 image: /images/example.jpg
@@ -50,14 +51,8 @@ authors:
   - John Doe
 ---
 
-<Callout>
-  This is an example!
-</Callout>
-
 
 Hello World!
-
-
 
 For more information see [pwn.guide](https://pwn.guide).
 
@@ -72,15 +67,6 @@ These are the foods I like:
 - Kebab
 
 - Hamburger
-
-### Example
-
-<Image
-  src="/images/example.jpg"
-  width="690"
-  height="404"
-  alt="Image"
-/>
 
 I love to code. Here is an example JavaScript code:
 

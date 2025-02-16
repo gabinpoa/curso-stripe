@@ -1,13 +1,6 @@
 import { desc, and, eq, isNull, asc } from 'drizzle-orm';
 import { db } from './drizzle';
-import {
-  activityLogs,
-  lessons,
-  modules,
-  teamMembers,
-  teams,
-  users,
-} from './schema';
+import { activityLogs, modules, teamMembers, teams, users } from './schema';
 import { cookies } from 'next/headers';
 import { verifyToken } from '@/lib/auth/session';
 import {
@@ -15,7 +8,9 @@ import {
   getProductById,
   getValidSubscriptionByCustomerIdAndProductId,
 } from '../payments/stripe';
-import { get } from 'http';
+import { SerializeResult } from 'next-mdx-remote-client';
+import { EvaluateResult } from 'next-mdx-remote-client/rsc';
+import { JSX } from 'react';
 
 export async function getUser() {
   const sessionCookie = (await cookies()).get('session');
@@ -180,6 +175,7 @@ export type ModulesAndLessonsMaybeComplete = {
     description: string | null;
     contentType?: 'MDX' | 'VIDEO';
     content?: string;
+    mdxSource?: EvaluateResult;
   }[];
 }[];
 

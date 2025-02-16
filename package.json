@@ -8,7 +8,8 @@
     "db:seed": "npx tsx lib/db/seed.ts",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
-    "db:studio": "drizzle-kit studio"
+    "db:studio": "drizzle-kit studio",
+    "db:edit": "npx tsx lib/db/edit.ts"
   },
   "dependencies": {
     "@radix-ui/react-accordion": "^1.2.3",
@@ -35,6 +36,7 @@
     "jose": "^5.9.6",
     "lucide-react": "^0.474.0",
     "next": "15.2.0-canary.33",
+    "next-mdx-remote-client": "2",
     "postcss": "^8.5.1",
     "postgres": "^3.4.5",
     "react": "19.0.0",
