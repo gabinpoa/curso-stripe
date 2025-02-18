@@ -1,4 +1,3 @@
-import Image from 'next/image';
 import {
   Card,
   CardContent,
@@ -101,8 +100,8 @@ export default async function Page({ params }: Props) {
         <div>
           <Card>
             <CardHeader>
-              <Image
-                src={courseData.metadata.thumbnail_url || '/placeholder.svg'}
+              <img
+                src={courseData.images[0] || '/static/placeholder.png'}
                 alt={courseData.name}
                 width={300}
                 height={200}

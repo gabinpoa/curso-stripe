@@ -190,6 +190,7 @@ export async function getProductById(productId: string) {
         ? product.default_price
         : product.default_price?.id,
     metadata: product.metadata,
+    images: product.images,
   };
 }
 
@@ -252,5 +253,6 @@ export async function getStripeProducts() {
         ? product.default_price
         : product.default_price?.id,
     metadata: product.metadata,
+    images: product.images,
   }));
 }

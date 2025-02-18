@@ -9,7 +9,6 @@ import {
 } from '@/components/ui/accordion';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import Image from 'next/image';
 import { getProductContentById, Lesson } from '@/lib/db/queries';
 
 type Props = Awaited<ReturnType<typeof getProductContentById>>;
@@ -45,10 +44,9 @@ export default function CourseContent(props: Props) {
             </CardContent>
           </Card>
         ) : (
-          <Image
-            src={courseData.metadata.thumbnail_url || '/placeholder.svg'}
+          <img
+            src={courseData.images[0] || '/static/placeholder.jpg'}
             alt={courseData.name}
-            unoptimized
             width={600}
             height={300}
             className="rounded-md object-cover"

@@ -62,7 +62,7 @@ function PricingCard({
   productId: string;
 }) {
   return (
-    <div className="pt-6">
+    <div className="p-3 border shadow rounded flex flex-col justify-between">
       <h2 className="text-2xl font-medium text-gray-900 mb-2">{name}</h2>
       <p className="text-sm text-gray-600 mb-4">
         teste grátis por {trialDays} dias
@@ -82,8 +82,10 @@ function PricingCard({
             </li>
           ))}
       </ul>
-      <Link href={`/courses/${productId}`}>
-        <Button className="text-blue-500 hover:underline">Ver curso</Button>
+      <Link href={`/cursos/${productId}/visao-geral`}>
+        <Button className="w-full bg-white hover:bg-gray-100 text-black border border-gray-200 rounded-full flex items-center justify-center">
+          Ver curso
+        </Button>
       </Link>
       <form action={checkoutAction}>
         <input type="hidden" name="priceId" value={priceId} />

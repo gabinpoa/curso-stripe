@@ -1,15 +1,6 @@
 import { getProductContentById } from '@/lib/db/queries';
 import { redirect } from 'next/navigation';
 import { MDXRemote } from 'next-mdx-remote-client/rsc';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from '@/components/ui/accordion';
-import { Badge } from '@/components/ui/badge';
-import Image from 'next/image';
 import CourseContent from '@/components/course-content';
 
 const components = {
