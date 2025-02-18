@@ -82,15 +82,17 @@ function PricingCard({
             </li>
           ))}
       </ul>
-      <Link href={`/cursos/${productId}/visao-geral`}>
-        <Button className="w-full bg-white hover:bg-gray-100 text-black border border-gray-200 rounded-full flex items-center justify-center">
-          Ver curso
-        </Button>
-      </Link>
-      <form action={checkoutAction}>
-        <input type="hidden" name="priceId" value={priceId} />
-        <SubmitButton />
-      </form>
+      <div className="flex flex-col gap-1">
+        <Link href={`/cursos/${productId}/visao-geral`}>
+          <Button className="w-full bg-white hover:bg-gray-100 text-black border border-gray-200 rounded-full flex items-center justify-center">
+            Ver curso
+          </Button>
+        </Link>
+        <form action={checkoutAction}>
+          <input type="hidden" name="priceId" value={priceId} />
+          <SubmitButton />
+        </form>
+      </div>
     </div>
   );
 }

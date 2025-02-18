@@ -1,45 +1,31 @@
-'use client';
-
 import { Button } from '@/components/ui/button';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { customerPortalAction } from '@/lib/payments/actions';
-import { useActionState } from 'react';
 import { TeamDataWithMembers, User } from '@/lib/db/schema';
-import { removeTeamMember } from '@/app/(login)/actions';
-import { InviteTeamMember } from './invite-team';
-
-type ActionState = {
-  error?: string;
-  success?: string;
-};
 
 export function Settings({ teamData }: { teamData: TeamDataWithMembers }) {
-  const [removeState, removeAction, isRemovePending] = useActionState<
-    ActionState,
-    FormData
-  >(removeTeamMember, { error: '', success: '' });
-
   const getUserDisplayName = (user: Pick<User, 'id' | 'name' | 'email'>) => {
     return user.name || user.email || 'Usuário Desconhecido';
   };
 
+  // disabled teams functionality, only one user per team
+  const thisUserData = teamData.teamMembers[0];
+
   return (
     <section className="flex-1 p-4 lg:p-8">
       <h1 className="text-lg lg:text-2xl font-medium mb-6">
-        Configurações da Equipe
+        Configurações da Assinatura
       </h1>
       <Card className="mb-8">
         <CardHeader>
-          <CardTitle>Assinatura da Equipe</CardTitle>
+          <CardTitle>Assinaturas ativas</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center">
               <div className="mb-4 sm:mb-0">
-                <p className="font-medium">
-                  Plano Atual: {teamData.planName || 'Gratuito'}
-                </p>
+                <p className="font-medium">{teamData.planName || 'Gratuito'}</p>
                 <p className="text-sm text-muted-foreground">
                   {teamData.subscriptionStatus === 'active'
                     ? 'Cobrado mensalmente'
@@ -59,56 +45,36 @@ export function Settings({ teamData }: { teamData: TeamDataWithMembers }) {
       </Card>
       <Card className="mb-8">
         <CardHeader>
-          <CardTitle>Membros da Equipe</CardTitle>
+          <CardTitle>Conta</CardTitle>
         </CardHeader>
         <CardContent>
           <ul className="space-y-4">
-            {teamData.teamMembers.map((member, index) => (
-              <li key={member.id} className="flex items-center justify-between">
-                <div className="flex items-center space-x-4">
-                  <Avatar>
-                    <AvatarImage
-                      src={`/placeholder.svg?height=32&width=32`}
-                      alt={getUserDisplayName(member.user)}
-                    />
-                    <AvatarFallback>
-                      {getUserDisplayName(member.user)
-                        .split(' ')
-                        .map((n) => n[0])
-                        .join('')}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div>
-                    <p className="font-medium">
-                      {getUserDisplayName(member.user)}
-                    </p>
-                    <p className="text-sm text-muted-foreground capitalize">
-                      {member.role}
-                    </p>
-                  </div>
+            <li
+              key={thisUserData.id}
+              className="flex items-center justify-between"
+            >
+              <div className="flex items-center space-x-4">
+                <Avatar>
+                  <AvatarFallback>
+                    {getUserDisplayName(thisUserData.user)
+                      .split(' ')
+                      .map((n) => n[0])
+                      .join('')}
+                  </AvatarFallback>
+                </Avatar>
+                <div>
+                  <p className="font-medium">
+                    {getUserDisplayName(thisUserData.user)}
+                  </p>
+                  <p className="text-sm text-muted-foreground capitalize">
+                    {thisUserData.role}
+                  </p>
                 </div>
-                {index > 1 ? (
-                  <form action={removeAction}>
-                    <input type="hidden" name="memberId" value={member.id} />
-                    <Button
-                      type="submit"
-                      variant="outline"
-                      size="sm"
-                      disabled={isRemovePending}
-                    >
-                      {isRemovePending ? 'Removendo...' : 'Remover'}
-                    </Button>
-                  </form>
-                ) : null}
-              </li>
-            ))}
+              </div>
+            </li>
           </ul>
-          {removeState?.error && (
-            <p className="text-red-500 mt-4">{removeState.error}</p>
-          )}
         </CardContent>
       </Card>
-      <InviteTeamMember />
     </section>
   );
 }

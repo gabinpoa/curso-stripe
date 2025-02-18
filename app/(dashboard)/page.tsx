@@ -10,6 +10,8 @@ import {
 } from '@/components/ui/card';
 import { Rocket, Target, Zap, TrendingUp } from 'lucide-react';
 import { getStripePrices, getStripeProducts } from '@/lib/payments/stripe';
+import { instructorName, siteName, subject } from '@/lib/utils';
+import AuthButton from './auth-button';
 
 export default async function PaginaInicial() {
   const [prices, products] = await Promise.all([
@@ -22,16 +24,17 @@ export default async function PaginaInicial() {
         <div className="container mx-auto py-6">
           <nav className="flex justify-between items-center">
             <Link href="/" className="text-2xl font-bold">
-              MarketingPro
+              {siteName}
             </Link>
             <div className="space-x-4">
-              <Link href="/cursos" className="hover:underline">
+              <AuthButton variant="secondary" className="bg-neutral-200" />
+              <Link href="#cursos" className="hover:underline">
                 Cursos
               </Link>
-              <Link href="/sobre" className="hover:underline">
+              <Link href="#sobre" className="hover:underline">
                 Sobre
               </Link>
-              <Link href="/contato" className="hover:underline">
+              <Link href="#contato" className="hover:underline">
                 Contato
               </Link>
             </div>
@@ -43,7 +46,7 @@ export default async function PaginaInicial() {
         <section className="bg-gradient-to-b from-primary to-background py-20 text-center">
           <div className="container mx-auto px-4">
             <h1 className="text-4xl md:text-6xl font-bold mb-6">
-              Domine o Marketing Digital com João Silva
+              Domine o {subject} com {siteName}
             </h1>
             <p className="text-xl mb-8">
               Aprenda estratégias comprovadas de Google Ads, marketing digital e
@@ -58,7 +61,7 @@ export default async function PaginaInicial() {
         <section className="py-16 bg-background">
           <div className="container mx-auto px-4">
             <h2 className="text-3xl font-bold text-center mb-12">
-              Por que Aprender com João Silva?
+              Por que Aprender com {siteName}?
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
               <Card>
@@ -68,8 +71,7 @@ export default async function PaginaInicial() {
                 </CardHeader>
                 <CardContent>
                   <p>
-                    Mais de 10 anos de experiência em marketing digital e Google
-                    Ads
+                    Mais de 10 anos de experiência em {subject} e {subject}
                   </p>
                 </CardContent>
               </Card>
@@ -109,7 +111,7 @@ export default async function PaginaInicial() {
           </div>
         </section>
 
-        <section className="py-16 bg-muted">
+        <section id="cursos" className="py-16 bg-muted">
           <div className="container mx-auto px-4">
             <h2 className="text-3xl font-bold text-center mb-12">
               Cursos em Destaque
@@ -120,13 +122,11 @@ export default async function PaginaInicial() {
                   className="flex flex-col justify-between"
                   key={product.id}
                 >
-                  <CardHeader>
+                  <CardHeader className="justify-center overflow-hidden items-center">
                     <img
                       src={product.images[0] || '/static/placeholder.png'}
                       alt={product.name}
-                      width={300}
-                      height={150}
-                      className="rounded-md object-cover"
+                      className="rounded-md"
                     />
                   </CardHeader>
                   <CardContent>
@@ -155,7 +155,7 @@ export default async function PaginaInicial() {
             </div>
             <div className="text-center mt-12">
               <Button size="lg" variant="outline" asChild>
-                <Link href="/cursos">Ver Todos os Cursos</Link>
+                <Link href="/precos">Ver Todos os Cursos</Link>
               </Button>
             </div>
           </div>
@@ -164,13 +164,13 @@ export default async function PaginaInicial() {
         <section className="py-16 bg-background text-center">
           <div className="container mx-auto px-4">
             <h2 className="text-3xl font-bold mb-6">
-              Pronto para Impulsionar Seu Marketing Digital?
+              Pronto para Impulsionar Seu {subject}?
             </h2>
             <p className="text-xl mb-8">
               Junte-se a centenas de alunos que já transformaram seus negócios
             </p>
             <Button size="lg" asChild>
-              <Link href="/cursos">Comece Agora</Link>
+              <Link href="#cursos">Comece Agora</Link>
             </Button>
           </div>
         </section>
@@ -180,8 +180,7 @@ export default async function PaginaInicial() {
         <div className="container mx-auto px-4">
           <div className="flex flex-col md:flex-row justify-between items-center">
             <p>
-              &copy; 2023 João Silva - Marketing Digital. Todos os direitos
-              reservados.
+              &copy; 2025 {siteName} - {subject} . Todos os direitos reservados.
             </p>
             <nav className="space-x-4 mt-4 md:mt-0">
               <Link href="/termos" className="hover:underline">
