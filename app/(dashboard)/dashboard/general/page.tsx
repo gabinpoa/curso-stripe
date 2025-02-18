@@ -5,9 +5,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
-import { Loader2 } from 'lucide-react';
+import { Loader2, LogOut } from 'lucide-react';
 import { useUser } from '@/lib/auth';
-import { updateAccount } from '@/app/(login)/actions';
+import { signOut, updateAccount } from '@/app/(login)/actions';
+import { useRouter } from 'next/navigation';
 
 type ActionState = {
   error?: string;
@@ -21,6 +22,7 @@ export default function GeneralPage() {
     updateAccount,
     { error: '', success: '' }
   );
+  const router = useRouter();
 
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -35,6 +37,12 @@ export default function GeneralPage() {
       formAction(new FormData(event.currentTarget));
     });
   };
+
+  async function handleSignOut() {
+    await signOut();
+    router.refresh();
+    router.push('/');
+  }
 
   return (
     <section className="flex-1 p-4 lg:p-8">
@@ -75,11 +83,7 @@ export default function GeneralPage() {
             {state.success && (
               <p className="text-green-500 text-sm">{state.success}</p>
             )}
-            <Button
-              type="submit"
-              className="bg-orange-500 hover:bg-orange-600 text-white"
-              disabled={isPending}
-            >
+            <Button type="submit" variant="default" disabled={isPending}>
               {isPending ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -92,6 +96,20 @@ export default function GeneralPage() {
           </form>
         </CardContent>
       </Card>
+      <form action={handleSignOut} className="w-full space-y-3 mt-4">
+        <Label htmlFor="sign-out" className="block">
+          Sair da conta
+        </Label>
+        <Button
+          name="sign-out"
+          id="sign-out"
+          type="submit"
+          variant={'destructive'}
+        >
+          <LogOut className="mr-2 h-4 w-4" />
+          <span>Sair</span>
+        </Button>
+      </form>
     </section>
   );
 }
