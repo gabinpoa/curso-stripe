@@ -1,5 +1,4 @@
 import { Button } from '@/components/ui/button';
-import { getUser } from '@/lib/db/queries';
 import Link from 'next/link';
 
 type AuthButtonProps = {
@@ -13,17 +12,18 @@ type AuthButtonProps = {
     | null
     | undefined;
   className?: string | undefined;
+  userLoggedIn?: boolean;
 };
 
 export default async function AuthButton({
   variant,
   className,
+  userLoggedIn,
 }: AuthButtonProps) {
-  const user = await getUser();
   return (
     <Button variant={variant} className={className} asChild>
-      {user ? (
-        <Link href="/dashboard">Dashboard</Link>
+      {userLoggedIn ? (
+        <Link href="/meus-cursos">Meus Cursos</Link>
       ) : (
         <Link href="/sign-in">Entrar</Link>
       )}

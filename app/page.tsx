@@ -11,13 +11,15 @@ import {
 import { Rocket, Target, Zap, TrendingUp } from 'lucide-react';
 import { getStripePrices, getStripeProducts } from '@/lib/payments/stripe';
 import { instructorName, siteName, subject } from '@/lib/utils';
-import AuthButton from './auth-button';
+import AuthButton from './(dashboard)/auth-button';
+import { getUser } from '@/lib/db/queries';
 
 export default async function PaginaInicial() {
   const [prices, products] = await Promise.all([
     getStripePrices(),
     getStripeProducts(),
   ]);
+  const userLoggedIn = (await getUser()) !== null;
   return (
     <div className="flex flex-col min-h-screen">
       <header className="bg-primary text-primary-foreground">
@@ -27,16 +29,19 @@ export default async function PaginaInicial() {
               {siteName}
             </Link>
             <div className="space-x-4">
-              <AuthButton variant="secondary" className="bg-neutral-200" />
-              <Link href="#cursos" className="hover:underline">
+              <AuthButton
+                userLoggedIn={userLoggedIn}
+                variant="secondary"
+                className="bg-neutral-200"
+              />
+              <Link href="/precos" className="hover:underline">
                 Cursos
               </Link>
-              <Link href="#sobre" className="hover:underline">
-                Sobre
-              </Link>
-              <Link href="#contato" className="hover:underline">
-                Contato
-              </Link>
+              {userLoggedIn && (
+                <Link href="/dashboard" className="hover:underline">
+                  Configurações
+                </Link>
+              )}
             </div>
           </nav>
         </div>
