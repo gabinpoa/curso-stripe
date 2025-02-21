@@ -1,9 +1,10 @@
-import { desc, and, eq, isNull, asc } from 'drizzle-orm';
+import { desc, and, eq, isNull, asc, inArray } from 'drizzle-orm';
 import { db } from './drizzle';
 import { activityLogs, modules, teamMembers, teams, users } from './schema';
 import { cookies } from 'next/headers';
 import { verifyToken } from '@/lib/auth/session';
 import {
+  getExpandedProductById,
   getPriceById,
   getProductById,
   getValidSubscriptionByCustomerIdAndProductId,
@@ -266,14 +267,9 @@ export async function getModulesAndLessonsPreviewByProductId(
 
 export async function getProductContentById(productId: string) {
   const product = await getProductById(productId);
-  if (!product.defaultPriceId) {
-    throw new Error('Product has no default price');
-  }
-  const price = await getPriceById(product.defaultPriceId);
 
   return {
     ...product,
-    price,
     modules: await getModulesAndLessonsByProductId(productId),
   };
 }
@@ -290,4 +286,12 @@ export async function getProductPreviewById(productId: string) {
     price,
     modules: await getModulesAndLessonsPreviewByProductId(productId),
   };
+}
+
+export async function getProductsModulesPreview(productIds: string[]) {
+  return await db
+    .select()
+    .from(modules)
+    .where(inArray(modules.productId, productIds))
+    .orderBy(asc(modules.order));
 }

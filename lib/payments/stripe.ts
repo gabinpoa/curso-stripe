@@ -144,7 +144,7 @@ export async function handleSubscriptionChange(
   }
 }
 
-async function getCustomerValidSubscriptions(customerId: string) {
+export async function getCustomerValidSubscriptions(customerId: string) {
   const customer = await stripe.customers.retrieve(customerId, {
     expand: ['subscriptions.data'],
   });
@@ -157,6 +157,34 @@ async function getCustomerValidSubscriptions(customerId: string) {
     (subscription) =>
       subscription.status === 'active' || subscription.status === 'trialing'
   );
+}
+
+export async function getExpandedCustomerValidSubscriptions(
+  customerId: string
+) {
+  const validSubscriptions = (
+    await stripe.subscriptions.list({
+      customer: customerId,
+    })
+  ).data.filter(
+    (subscription) =>
+      subscription.status === 'active' || subscription.status === 'trialing'
+  );
+
+  const expandedSubscriptions = await Promise.all(
+    validSubscriptions.map(async (subscription) => {
+      const product = await getProductById(
+        subscription.items.data[0].price.product as string
+      );
+
+      return {
+        ...subscription,
+        product: product,
+      };
+    })
+  );
+
+  return expandedSubscriptions;
 }
 
 export async function getValidSubscriptionByCustomerIdAndProductId(
@@ -173,9 +201,7 @@ export async function getValidSubscriptionByCustomerIdAndProductId(
 }
 
 export async function getProductById(productId: string) {
-  const product = await stripe.products.retrieve(productId, {
-    expand: ['default_price'],
-  });
+  const product = await stripe.products.retrieve(productId);
 
   if (!product) {
     throw new Error(`Product with ID ${productId} not found`);
@@ -185,12 +211,27 @@ export async function getProductById(productId: string) {
     id: product.id,
     name: product.name,
     description: product.description,
-    defaultPriceId:
-      typeof product.default_price === 'string'
-        ? product.default_price
-        : product.default_price?.id,
+    defaultPriceId: product.default_price as string,
     metadata: product.metadata,
     images: product.images,
+  };
+}
+
+export async function getExpandedProductById(productId: string) {
+  const expandedProduct = await stripe.products.retrieve(productId, {
+    expand: ['default_price'],
+  });
+  const defaultPrice = expandedProduct.default_price;
+  if (typeof defaultPrice !== 'object' || !defaultPrice) {
+    throw new Error('Product default price is not expanded');
+  }
+  return {
+    id: expandedProduct.id,
+    name: expandedProduct.name,
+    description: expandedProduct.description,
+    defaultPrice: defaultPrice,
+    metadata: expandedProduct.metadata,
+    images: expandedProduct.images,
   };
 }
 
