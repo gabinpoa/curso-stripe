@@ -17,7 +17,7 @@ const components = {
 };
 
 type ProductContent = Awaited<ReturnType<typeof getProductContentById>>;
-export async function addMdxSourceToContent(content: ProductContent) {
+function addMdxSourceToContent(content: ProductContent) {
   const modules = content.modules.map((module) => {
     module.lessons = module.lessons.map((lesson) => {
       if (!lesson.content) {
@@ -46,7 +46,7 @@ export default async function Page({ params }: Props) {
 
   let courseContent;
   try {
-    courseContent = await addMdxSourceToContent(
+    courseContent = addMdxSourceToContent(
       await getProductContentById(id)
     );
   } catch (error) {

@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 
 // Prices are fresh for four hours max
-export const revalidate = 3600 * 4;
+const revalidate = 3600 * 4;
 
 export default async function PricingPage() {
   const [prices, products] = await Promise.all([
