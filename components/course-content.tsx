@@ -11,11 +11,13 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { getProductContentById, Lesson } from '@/lib/db/queries';
 
-type Props = Awaited<ReturnType<typeof getProductContentById>>;
-export default function CourseContent(props: Props) {
-  const [selectedLesson, setSelectedLesson] = useState<Lesson | null>(null);
-
-  const courseData = props;
+type Props = {
+  courseData: Awaited<ReturnType<typeof getProductContentById>>;
+};
+export default function CourseContent({ courseData }: Props) {
+  const [selectedLesson, setSelectedLesson] = useState<Lesson>(
+    courseData.modules[0].lessons[0]
+  );
 
   return (
     <>
@@ -54,8 +56,13 @@ export default function CourseContent(props: Props) {
         )}
       </div>
       <div>
-        <h2 className="text-2xl font-bold mb-4">Course Content</h2>
-        <Accordion type="single" collapsible className="w-full">
+        <h2 className="text-2xl font-bold mb-4">Conteúdo do Curso</h2>
+        <Accordion
+          defaultValue="module-0"
+          type="single"
+          collapsible
+          className="w-full"
+        >
           {courseData.modules.map((module, moduleIndex) => (
             <AccordionItem value={`module-${moduleIndex}`} key={moduleIndex}>
               <AccordionTrigger>
@@ -70,7 +77,7 @@ export default function CourseContent(props: Props) {
                 {module.lessons.map((lesson, lessonIndex) => (
                   <Button
                     variant="ghost"
-                    className="w-full justify-start"
+                    className="w-full justify-start focus:text-blue-900"
                     key={lessonIndex}
                     onClick={() => setSelectedLesson(lesson)}
                   >

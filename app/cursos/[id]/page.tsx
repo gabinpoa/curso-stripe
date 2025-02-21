@@ -18,29 +18,24 @@ const components = {
 
 type ProductContent = Awaited<ReturnType<typeof getProductContentById>>;
 export async function addMdxSourceToContent(content: ProductContent) {
-  const modules = await Promise.all(
-    content.modules.map(async (module) => {
-      module.lessons = await Promise.all(
-        module.lessons.map(async (lesson) => {
-          if (!lesson.content) {
-            lesson.mdxComponent = (
-              <MDXRemote
-                source="## Conteudo disponivel apenas 7 dias apos o inicio do curso"
-                components={components}
-              />
-            );
-          } else if (lesson.contentType === 'MDX') {
-            lesson.mdxComponent = (
-              <MDXRemote source={lesson.content} components={components} />
-            );
-          }
-          return lesson;
-        })
-      );
-      return module;
-    })
-  );
-
+  const modules = content.modules.map((module) => {
+    module.lessons = module.lessons.map((lesson) => {
+      if (!lesson.content) {
+        lesson.mdxComponent = (
+          <MDXRemote
+            source="## Conteudo disponivel apenas 7 dias apos o inicio do curso"
+            components={components}
+          />
+        );
+      } else if (lesson.contentType === 'MDX') {
+        lesson.mdxComponent = (
+          <MDXRemote source={lesson.content} components={components} />
+        );
+      }
+      return lesson;
+    });
+    return module;
+  });
   content.modules = modules;
   return content;
 }
@@ -60,10 +55,8 @@ export default async function Page({ params }: Props) {
   }
 
   return (
-    <div className="container mx-auto py-8">
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <CourseContent {...courseContent} />
-      </div>
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <CourseContent courseData={courseContent} />
     </div>
   );
 }
