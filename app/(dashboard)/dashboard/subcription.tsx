@@ -4,7 +4,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { customerPortalAction } from '@/lib/payments/actions';
 import { TeamDataWithMembers, User } from '@/lib/db/schema';
 
-export function Settings({ teamData }: { teamData: TeamDataWithMembers }) {
+export default function SubscriptionSettings({
+  teamData,
+}: {
+  teamData: TeamDataWithMembers;
+}) {
   const getUserDisplayName = (user: Pick<User, 'id' | 'name' | 'email'>) => {
     return user.name || user.email || 'Usuário Desconhecido';
   };
@@ -13,7 +17,7 @@ export function Settings({ teamData }: { teamData: TeamDataWithMembers }) {
   const thisUserData = teamData.teamMembers[0];
 
   return (
-    <section className="flex-1 p-4 lg:p-8">
+    <>
       <h1 className="text-lg lg:text-2xl font-medium mb-6">
         Configurações da Assinatura
       </h1>
@@ -75,6 +79,6 @@ export function Settings({ teamData }: { teamData: TeamDataWithMembers }) {
           </ul>
         </CardContent>
       </Card>
-    </section>
+    </>
   );
 }

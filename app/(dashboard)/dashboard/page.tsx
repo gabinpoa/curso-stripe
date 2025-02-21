@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation';
-import { Settings } from './settings';
+import SubscriptionSettings from './subcription';
 import { getTeamForUser, getUser } from '@/lib/db/queries';
+import AccountSettings from './account';
 
 export default async function SettingsPage() {
   const user = await getUser();
@@ -15,5 +16,10 @@ export default async function SettingsPage() {
     throw new Error('Team not found');
   }
 
-  return <Settings teamData={teamData} />;
+  return (
+    <section className="flex-1 p-4 lg:p-8">
+      <SubscriptionSettings teamData={teamData} />
+      <AccountSettings />
+    </section>
+  );
 }

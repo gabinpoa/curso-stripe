@@ -15,7 +15,7 @@ type ActionState = {
   success?: string;
 };
 
-export default function GeneralPage() {
+export default function AccountSettings() {
   const { userPromise } = useUser();
   const user = use(userPromise);
   const [state, formAction, isPending] = useActionState<ActionState, FormData>(
@@ -45,7 +45,7 @@ export default function GeneralPage() {
   }
 
   return (
-    <section className="flex-1 p-4 lg:p-8">
+    <>
       <h1 className="text-lg lg:text-2xl font-medium text-gray-900 mb-6">
         Configurações Gerais
       </h1>
@@ -110,6 +110,6 @@ export default function GeneralPage() {
           <span>Sair</span>
         </Button>
       </form>
-    </section>
+    </>
   );
 }
