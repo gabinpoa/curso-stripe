@@ -14,7 +14,7 @@ export default function Header({ userLoggedIn }: { userLoggedIn: boolean }) {
         </Link>
         <div className="flex items-center gap-6">
           <Link
-            href="/cursos"
+            href="/precos"
             className="text-sm text-zinc-600 hover:text-zinc-900"
           >
             Cursos
