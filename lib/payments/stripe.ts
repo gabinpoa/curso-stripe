@@ -76,17 +76,6 @@ export async function createCustomerPortalSession(team: Team) {
         headline: 'Manage your subscription',
       },
       features: {
-        subscription_update: {
-          enabled: true,
-          default_allowed_updates: ['price', 'quantity', 'promotion_code'],
-          proration_behavior: 'create_prorations',
-          products: [
-            {
-              product: product.id,
-              prices: prices.data.map((price) => price.id),
-            },
-          ],
-        },
         subscription_cancel: {
           enabled: true,
           mode: 'at_period_end',
@@ -100,6 +89,9 @@ export async function createCustomerPortalSession(team: Team) {
               'other',
             ],
           },
+        },
+        payment_method_update: {
+          enabled: true,
         },
       },
     });
