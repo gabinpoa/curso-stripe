@@ -20,7 +20,7 @@ export function SubmitButton() {
         </>
       ) : (
         <>
-          Assinar com 7 dias grátis
+          Assinar agora
           <ArrowRight className="ml-2 h-4 w-4" />
         </>
       )}
