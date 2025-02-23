@@ -45,14 +45,7 @@ export default async function Page({ params }: Props) {
   const { id } = await params;
 
   let courseContent;
-  try {
-    courseContent = addMdxSourceToContent(
-      await getProductContentById(id)
-    );
-  } catch (error) {
-    console.error(error);
-    redirect('/cursos/' + id + '/visao-geral');
-  }
+  courseContent = addMdxSourceToContent(await getProductContentById(id));
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

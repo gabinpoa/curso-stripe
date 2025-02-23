@@ -9,8 +9,6 @@ import {
   getProductById,
   getValidSubscriptionByCustomerIdAndProductId,
 } from '../payments/stripe';
-import { SerializeResult } from 'next-mdx-remote-client';
-import { EvaluateResult } from 'next-mdx-remote-client/rsc';
 import { JSX } from 'react';
 
 export async function getUser() {
