@@ -14,7 +14,16 @@ import { getCustomerId, getProductsModulesPreview } from '@/lib/db/queries';
 export default async function PaginaMeusCursos() {
   const customerId = await getCustomerId();
 
+  if (typeof customerId === 'object' && 'message' in customerId) {
+    console.log(customerId.message);
+    return <NotSubscribedToAnyCourse />;
+  }
+
   const subscriptions = await getExpandedCustomerValidSubscriptions(customerId);
+
+  if (subscriptions.length === 0) {
+    return <NotSubscribedToAnyCourse />;
+  }
 
   const productsIds = subscriptions.map(
     (subscription) => subscription.product.id
@@ -44,6 +53,20 @@ export default async function PaginaMeusCursos() {
           <CourseCard key={course.id} {...course} />
         ))}
       </div>
+    </div>
+  );
+}
+
+function NotSubscribedToAnyCourse() {
+  return (
+    <div className="container mx-auto py-8 text-center">
+      <h1 className="text-3xl font-bold mb-6">Meus Cursos</h1>
+      <p className="text-lg text-gray-600">
+        Você ainda não se inscreveu em nenhum curso.
+      </p>
+      <Link href="/#cursos" passHref>
+        <Button className="mt-4">Ver Cursos</Button>
+      </Link>
     </div>
   );
 }

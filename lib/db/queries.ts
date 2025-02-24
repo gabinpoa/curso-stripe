@@ -99,17 +99,17 @@ export async function getTeamCustomerId(teamId: number) {
 export async function getCustomerId() {
   const user = await getUser();
   if (!user) {
-    throw new Error('User not authenticated', { cause: 'not_authenticated' });
+    return { message: 'User not authenticated' };
   }
 
   const teamId = (await getUserWithTeam(user.id)).teamId;
   if (!teamId) {
-    throw new Error('User is not part of any team');
+    return { message: 'User is not part of any team' };
   }
 
   const result = await getTeamCustomerId(teamId);
   if (!result) {
-    throw new Error('Team has no Stripe customer ID');
+    return { message: 'Team has no Stripe customer ID associated' };
   }
 
   return result;
@@ -182,8 +182,12 @@ export type Lesson = {
 
 export async function getModulesAndLessonsByProductId(
   productId: string
-): Promise<ModulesAndLessonsMaybeComplete> {
+): Promise<ModulesAndLessonsMaybeComplete | { message: string }> {
   const customerId = await getCustomerId();
+
+  if (typeof customerId === 'object' && 'message' in customerId) {
+    return customerId; // Return error message
+  }
 
   const subscription = await getValidSubscriptionByCustomerIdAndProductId(
     customerId,
@@ -212,9 +216,7 @@ export async function getModulesAndLessonsByProductId(
   });
 
   if (!subscription) {
-    throw new Error('User is not subscribed to the product', {
-      cause: 'not_subscribed',
-    });
+    return { message: 'User has no subscription to this product' };
   } else if (subscription.status === 'active') {
     // Return all content if user is subscribed and active
     return allModules;
@@ -234,7 +236,7 @@ export async function getModulesAndLessonsByProductId(
       }
     });
   } else {
-    throw new Error('Unexpected subscription status');
+    return { message: 'User has no active subscription' };
   }
 }
 
@@ -265,10 +267,15 @@ export async function getModulesAndLessonsPreviewByProductId(
 
 export async function getProductContentById(productId: string) {
   const product = await getProductById(productId);
+  const modules = await getModulesAndLessonsByProductId(productId);
+
+  if ('message' in modules) {
+    return modules; // Return error message
+  }
 
   return {
     ...product,
-    modules: await getModulesAndLessonsByProductId(productId),
+    modules,
   };
 }
 

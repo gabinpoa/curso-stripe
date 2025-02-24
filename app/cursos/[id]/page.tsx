@@ -18,6 +18,9 @@ const components = {
 
 type ProductContent = Awaited<ReturnType<typeof getProductContentById>>;
 function addMdxSourceToContent(content: ProductContent) {
+  if ('message' in content) {
+    throw new Error(content.message);
+  }
   const modules = content.modules.map((module) => {
     module.lessons = module.lessons.map((lesson) => {
       if (!lesson.content) {
