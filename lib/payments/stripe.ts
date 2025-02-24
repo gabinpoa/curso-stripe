@@ -78,7 +78,7 @@ export async function createCustomerPortalSession(team: Team) {
       features: {
         subscription_cancel: {
           enabled: true,
-          mode: 'at_period_end',
+          mode: 'immediately',
           cancellation_reason: {
             enabled: true,
             options: [
