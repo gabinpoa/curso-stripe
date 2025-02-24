@@ -1,27 +1,25 @@
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Rocket, Target, Zap, TrendingUp } from 'lucide-react';
-import { getStripePrices, getStripeProducts } from '@/lib/payments/stripe';
-import { instructorName, siteName, subject } from '@/lib/utils';
+import {
+  getExpandedProductsWithPrices,
+  unsafeGetCustomerSubscriptionsProductsIds,
+} from '@/lib/payments/stripe';
+import { siteName, subject } from '@/lib/utils';
 import AuthButton from './(dashboard)/auth-button';
 import { getUser } from '@/lib/db/queries';
-import { checkoutAction } from '@/lib/payments/actions';
-import { SubmitButton } from '@/components/submit-button';
+import FeaturedCourses from '@/components/featured-courses';
 
 export default async function PaginaInicial() {
-  const [prices, products] = await Promise.all([
-    getStripePrices(),
-    getStripeProducts(),
-  ]);
-  const userLoggedIn = (await getUser()) !== null;
+  const [user, productsWithPrices, userSubscriptionsProductsIds] =
+    await Promise.all([
+      getUser(),
+      getExpandedProductsWithPrices(),
+      unsafeGetCustomerSubscriptionsProductsIds(),
+    ]);
+  const userLoggedIn = user !== null;
+
   return (
     <div className="flex flex-col min-h-screen">
       <header className="bg-primary text-primary-foreground">
@@ -123,15 +121,10 @@ export default async function PaginaInicial() {
             <h2 className="text-3xl font-bold text-center mb-12">
               Cursos em Destaque
             </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {products.map((product) => (
-                <CourseCard
-                  key={product.id}
-                  product={product}
-                  prices={prices}
-                />
-              ))}
-            </div>
+            <FeaturedCourses
+              userSubscriptionsProductsIds={userSubscriptionsProductsIds}
+              productsWithPrices={productsWithPrices}
+            />
           </div>
         </section>
 
@@ -171,65 +164,5 @@ export default async function PaginaInicial() {
         </div>
       </footer>
     </div>
-  );
-}
-
-interface Product {
-  id: string;
-  name: string;
-  description: string | null;
-  defaultPriceId: string | undefined;
-  metadata: import('stripe').Stripe.Metadata;
-  images: string[];
-}
-
-interface Price {
-  id: string;
-  productId: string;
-  unitAmount: number | null;
-  currency: string;
-  interval: import('stripe').Stripe.Price.Recurring.Interval | undefined;
-  trialPeriodDays: number | null | undefined;
-}
-
-function CourseCard({
-  product,
-  prices,
-}: {
-  product: Product;
-  prices: Price[];
-}) {
-  return (
-    <Card className="flex flex-col justify-between" key={product.id}>
-      <CardHeader className="justify-center overflow-hidden items-center">
-        <img
-          src={product.images[0] || '/static/placeholder.png'}
-          alt={product.name}
-          className="rounded-md"
-        />
-      </CardHeader>
-      <CardContent>
-        <CardTitle>{product.name}</CardTitle>
-        <CardDescription className="mt-2">
-          {product.description}
-        </CardDescription>
-        <p className="font-bold mt-2">
-          R${' '}
-          {(
-            (prices.find((price) => price.id === product.defaultPriceId)
-              ?.unitAmount ?? 4000) / 100
-          ).toFixed(2)}
-        </p>
-      </CardContent>
-      <CardFooter className="flex flex-col gap-3">
-        <Button variant="outline" asChild className="w-full">
-          <Link href={`/cursos/${product.id}/visao-geral`}>Saiba Mais</Link>
-        </Button>
-        <form className="w-full" action={checkoutAction}>
-          <input type="hidden" name="priceId" value={product.defaultPriceId} />
-          <SubmitButton />
-        </form>
-      </CardFooter>
-    </Card>
   );
 }

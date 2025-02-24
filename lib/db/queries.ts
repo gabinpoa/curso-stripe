@@ -4,7 +4,6 @@ import { activityLogs, modules, teamMembers, teams, users } from './schema';
 import { cookies } from 'next/headers';
 import { verifyToken } from '@/lib/auth/session';
 import {
-  getExpandedProductById,
   getPriceById,
   getProductById,
   getValidSubscriptionByCustomerIdAndProductId,
@@ -41,6 +40,35 @@ export async function getUser() {
   }
 
   return user[0];
+}
+
+export async function unsafeGetCustomerId() {
+  const sessionCookie = (await cookies()).get('session');
+  if (!sessionCookie || !sessionCookie.value) {
+    return null;
+  }
+
+  const sessionData = await verifyToken(sessionCookie.value);
+  if (
+    !sessionData ||
+    !sessionData.user ||
+    typeof sessionData.user.id !== 'number' ||
+    new Date(sessionData.expires) < new Date()
+  ) {
+    return null;
+  }
+
+  const userId = sessionData.user.id;
+  if (!userId) {
+    return null;
+  }
+
+  const teamId = (await getUserWithTeam(userId)).teamId;
+  if (!teamId) {
+    return null;
+  }
+
+  return getTeamCustomerId(teamId);
 }
 
 export async function getTeamByStripeCustomerId(customerId: string) {

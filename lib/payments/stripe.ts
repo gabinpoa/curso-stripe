@@ -4,6 +4,7 @@ import { Team } from '@/lib/db/schema';
 import {
   getTeamByStripeCustomerId,
   getUser,
+  unsafeGetCustomerId,
   updateTeamSubscription,
 } from '@/lib/db/queries';
 
@@ -151,6 +152,32 @@ export async function getCustomerValidSubscriptions(customerId: string) {
   );
 }
 
+export async function unsafeGetCustomerSubscriptionsProductsIds() {
+  const customerId = await unsafeGetCustomerId();
+  if (!customerId) {
+    return null;
+  }
+
+  const subscriptions = await stripe.subscriptions.list({
+    customer: customerId,
+    expand: ['data.items.data.price'],
+  });
+
+  let validSubscriptionsProductIds: string[] = [];
+  for (const subscription of subscriptions.data) {
+    if (
+      subscription.status === 'active' ||
+      subscription.status === 'trialing'
+    ) {
+      validSubscriptionsProductIds.push(
+        subscription.items.data[0].price.product as string
+      );
+    }
+  }
+
+  return validSubscriptionsProductIds;
+}
+
 export async function getExpandedCustomerValidSubscriptions(
   customerId: string
 ) {
@@ -274,7 +301,6 @@ export async function getStripePrices() {
 export async function getStripeProducts() {
   const products = await stripe.products.list({
     active: true,
-    expand: ['data.default_price'],
   });
 
   return products.data.map((product) => ({
@@ -288,4 +314,14 @@ export async function getStripeProducts() {
     metadata: product.metadata,
     images: product.images,
   }));
+}
+
+export function getExpandedProductsWithPrices(limit?: number) {
+  return stripe.products
+    .list({
+      active: true,
+      limit: limit,
+      expand: ['data.default_price'],
+    })
+    .then((products) => products.data);
 }
