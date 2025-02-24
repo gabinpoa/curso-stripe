@@ -8,11 +8,7 @@ export function SubmitButton() {
   const { pending } = useFormStatus();
 
   return (
-    <Button
-      type="submit"
-      disabled={pending}
-      className="w-full bg-white hover:bg-gray-100 text-black border border-gray-200 rounded-full flex items-center justify-center"
-    >
+    <Button type="submit" disabled={pending} className="w-full">
       {pending ? (
         <>
           <Loader2 className="animate-spin mr-2 h-4 w-4" />

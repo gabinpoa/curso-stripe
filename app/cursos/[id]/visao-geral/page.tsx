@@ -13,7 +13,7 @@ import {
 } from '@/components/ui/accordion';
 import { Badge } from '@/components/ui/badge';
 import { getProductPreviewById } from '@/lib/db/queries';
-import { SubmitButton } from '@/app/(dashboard)/precos/submit-button';
+import { SubmitButton } from '@/components/submit-button';
 import { checkoutAction } from '@/lib/payments/actions';
 
 type Props = { params: Promise<{ id: string }> };
