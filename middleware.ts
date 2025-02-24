@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { signToken, verifyToken } from '@/lib/auth/session';
 
-const protectedRoutes = ['/dashboard', '/cursos'];
+const protectedRoutes = ['/dashboard', '/cursos', '/meus-cursos'];
 const exceptionRoute = '/visao-geral';
 
 export async function middleware(request: NextRequest) {
