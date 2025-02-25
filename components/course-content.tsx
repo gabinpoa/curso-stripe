@@ -9,10 +9,14 @@ import {
 } from '@/components/ui/accordion';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { getProductContentById, Lesson } from '@/lib/db/queries';
+import {
+  getProductContentById,
+  Lesson,
+  ProductContent,
+} from '@/lib/db/queries';
 
 type Props = {
-  courseData: Awaited<ReturnType<typeof getProductContentById>>;
+  courseData: ProductContent;
 };
 export default function CourseContent({ courseData }: Props) {
   const [selectedLesson, setSelectedLesson] = useState<Lesson>(

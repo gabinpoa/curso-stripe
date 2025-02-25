@@ -1,4 +1,4 @@
-import { getProductContentById } from '@/lib/db/queries';
+import { getProductContentById, ProductContent } from '@/lib/db/queries';
 import { redirect } from 'next/navigation';
 import { MDXRemote } from 'next-mdx-remote-client/rsc';
 import CourseContent from '@/components/course-content';
@@ -16,17 +16,13 @@ const components = {
   ),
 };
 
-type ProductContent = Awaited<ReturnType<typeof getProductContentById>>;
 function addMdxSourceToContent(content: ProductContent) {
-  if ('message' in content) {
-    throw new Error(content.message);
-  }
   const modules = content.modules.map((module) => {
     module.lessons = module.lessons.map((lesson) => {
       if (!lesson.content) {
         lesson.mdxComponent = (
           <MDXRemote
-            source="## Conteudo disponivel apenas 7 dias apos o inicio do curso"
+            source="## Conteúdo disponível apenas 7 dias apos o inicio do curso"
             components={components}
           />
         );
@@ -47,8 +43,11 @@ type Props = { params: Promise<{ id: string }> };
 export default async function Page({ params }: Props) {
   const { id } = await params;
 
-  let courseContent;
-  courseContent = addMdxSourceToContent(await getProductContentById(id));
+  let courseContent = await getProductContentById(id);
+  if ('message' in courseContent) {
+    throw new Error(courseContent.message);
+  }
+  courseContent = addMdxSourceToContent(courseContent);
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

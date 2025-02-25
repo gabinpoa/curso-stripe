@@ -9,6 +9,7 @@ import {
   getValidSubscriptionByCustomerIdAndProductId,
 } from '../payments/stripe';
 import { JSX } from 'react';
+import Stripe from 'stripe';
 
 export async function getUser() {
   const sessionCookie = (await cookies()).get('session');
@@ -293,7 +294,18 @@ export async function getModulesAndLessonsPreviewByProductId(
   return result;
 }
 
-export async function getProductContentById(productId: string) {
+export type ProductContent = {
+  modules: ModulesAndLessonsMaybeComplete;
+  id: string;
+  name: string;
+  description: string | null;
+  defaultPriceId: string;
+  metadata: Stripe.Metadata;
+  images: string[];
+};
+export async function getProductContentById(
+  productId: string
+): Promise<ProductContent | { message: string }> {
   const product = await getProductById(productId);
   const modules = await getModulesAndLessonsByProductId(productId);
 
