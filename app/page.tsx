@@ -58,7 +58,7 @@ export default async function PaginaInicial() {
               ferramentas no-code
             </p>
             <Button size="lg" asChild>
-              <Link href="/cursos">Explorar Cursos</Link>
+              <Link href="#cursos">Explorar Cursos</Link>
             </Button>
           </div>
         </section>
