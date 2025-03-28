@@ -41,7 +41,7 @@ export default function Header({ userLoggedIn }: { userLoggedIn: boolean }) {
               className="rounded-full"
               asChild
             >
-              <Link href="/sign-in">Login</Link>
+              <Link href="/login">Login</Link>
             </Button>
           )}
         </div>

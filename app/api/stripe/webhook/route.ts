@@ -20,14 +20,14 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  switch (event.type) {
-    case 'customer.subscription.updated':
-    case 'customer.subscription.deleted':
-      const subscription = event.data.object as Stripe.Subscription;
-      await handleSubscriptionChange(subscription);
-      break;
-    default:
-      console.log(`Unhandled event type ${event.type}`);
+  if (
+    event.type === 'customer.subscription.updated' ||
+    event.type === 'customer.subscription.deleted'
+  ) {
+    const subscription = event.data.object as Stripe.Subscription;
+    await handleSubscriptionChange(subscription);
+  } else {
+    console.log(`Unhandled event type ${event.type}`);
   }
 
   return NextResponse.json({ received: true });

@@ -25,7 +25,7 @@ export default async function AuthButton({
       {userLoggedIn ? (
         <Link href="/meus-cursos">Meus Cursos</Link>
       ) : (
-        <Link href="/sign-in">Entrar</Link>
+        <Link href="/login">Entrar</Link>
       )}
     </Button>
   );

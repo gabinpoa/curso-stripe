@@ -2,14 +2,36 @@
 
 import { redirect } from 'next/navigation';
 import { createCheckoutSession, createCustomerPortalSession } from './stripe';
-import { withTeam } from '@/lib/auth/middleware';
+import { fetchUserAttributesServer } from '@/utils/amplify-utils';
 
-export const checkoutAction = withTeam(async (formData, team) => {
+export async function checkoutAction(formData: {
+  get(name: string): FormDataEntryValue | null;
+}) {
   const priceId = formData.get('priceId') as string;
-  await createCheckoutSession({ team: team, priceId });
-});
+  const userAttributes = await fetchUserAttributesServer();
+  if (!userAttributes) {
+    redirect('/login?checkout=true&priceId=' + priceId);
+  }
+  const customerId = userAttributes['custom:customer_id'];
 
-export const customerPortalAction = withTeam(async (_, team) => {
-  const portalSession = await createCustomerPortalSession(team);
+  if (!customerId) {
+    throw new Error('User attributes are missing: customerId');
+  }
+
+  await createCheckoutSession({ customerId, priceId });
+}
+
+export async function customerPortalAction() {
+  const userAttributes = await fetchUserAttributesServer();
+  if (!userAttributes) {
+    throw new Error('Cannot get user attributes');
+  }
+
+  const customerId = userAttributes['custom:customer_id'];
+  if (!customerId) {
+    throw new Error('User attributes are missing: customerId');
+  }
+
+  const portalSession = await createCustomerPortalSession(customerId);
   redirect(portalSession.url);
-});
+}

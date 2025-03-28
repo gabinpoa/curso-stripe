@@ -8,50 +8,61 @@ import {
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
-import { getExpandedCustomerValidSubscriptions } from '@/lib/payments/stripe';
-import { getCustomerId, getProductsModulesPreview } from '@/lib/db/queries';
+import {
+  cookiesClient,
+  fetchUserAttributesServer,
+} from '@/utils/amplify-utils';
+import { redirect } from 'next/navigation';
 
 export default async function PaginaMeusCursos() {
-  const customerId = await getCustomerId();
-
-  if (typeof customerId === 'object' && 'message' in customerId) {
-    console.log(customerId.message);
-    return <NotSubscribedToAnyCourse />;
+  const userAttributes = await fetchUserAttributesServer();
+  if (!userAttributes) {
+    console.error('Cannot get user attributes');
+    redirect('/login');
   }
 
-  const subscriptions = await getExpandedCustomerValidSubscriptions(customerId);
-
-  if (subscriptions.length === 0) {
-    return <NotSubscribedToAnyCourse />;
+  const customerId = userAttributes['custom:customer_id'];
+  if (!customerId) {
+    console.error('Customer ID not found');
+    redirect('/login');
   }
 
-  const productsIds = subscriptions.map(
-    (subscription) => subscription.product.id
-  );
-
-  const coursesModules = await getProductsModulesPreview(productsIds);
-
-  const subscribedCourses = subscriptions.map((subscription) => {
-    const product = subscription.product;
-    const modules = coursesModules.filter(
-      (module) => module.productId === product.id
+  const { data: subscriptions } =
+    await cookiesClient.models.CourseSubscription.listCourseSubscriptionByCustomerIdAndStatus(
+      {
+        customerId,
+        status: {
+          between: ['active', 'trialing'],
+        },
+      },
+      {
+        selectionSet: [
+          'course.productId',
+          'course.name',
+          'course.description',
+          'course.image',
+          'course.modules.*',
+        ],
+        authMode: 'userPool',
+      }
     );
-    return {
-      id: product.id,
-      name: product.name,
-      description: product.description,
-      images: product.images,
-      modules,
-    };
-  });
+
+  const subscribedCourses = subscriptions.map((subscription) => ({
+    ...subscription.course,
+    id: subscription.course.productId,
+  }));
 
   return (
     <div className="container mx-auto py-8">
       <h1 className="text-3xl font-bold mb-6">Meus Cursos</h1>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {subscribedCourses.map((course) => (
-          <CourseCard key={course.id} {...course} />
-        ))}
+        {subscribedCourses.length === 0 ? (
+          <NotSubscribedToAnyCourse />
+        ) : (
+          subscribedCourses.map((course) => (
+            <CourseCard key={course.id} {...course} />
+          ))
+        )}
       </div>
     </div>
   );
@@ -59,15 +70,14 @@ export default async function PaginaMeusCursos() {
 
 function NotSubscribedToAnyCourse() {
   return (
-    <div className="container mx-auto py-8 text-center">
-      <h1 className="text-3xl font-bold mb-6">Meus Cursos</h1>
+    <>
       <p className="text-lg text-gray-600">
         Você ainda não se inscreveu em nenhum curso.
       </p>
       <Link href="/#cursos" passHref>
         <Button className="mt-4">Ver Cursos</Button>
       </Link>
-    </div>
+    </>
   );
 }
 
@@ -75,14 +85,13 @@ interface CourseCardProps {
   id: string;
   name: string;
   description: string | null;
-  images: string[];
+  image: string | null;
   modules: {
-    id: number;
-    productId: string;
+    id: number | string;
     name: string;
     description: string | null;
     order: number;
-    isExtraContent: boolean;
+    isExtraContent: boolean | null;
   }[];
 }
 
@@ -91,7 +100,7 @@ function CourseCard(course: CourseCardProps) {
     <Card key={course.id} className="flex flex-col">
       <CardHeader className="items-center">
         <img
-          src={course.images[0] || '/static/placeholder.png'}
+          src={course.image || '/static/placeholder.png'}
           alt={course.name}
           width={300}
           height={150}

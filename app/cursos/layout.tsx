@@ -1,12 +1,12 @@
 import Header from '@/components/header';
-import { getUser } from '@/lib/db/queries';
+import { AuthGetCurrentUserServer } from '@/utils/amplify-utils';
 
 export default async function MainLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const userLoggedIn = (await getUser()) !== null;
+  const userLoggedIn = !!(await AuthGetCurrentUserServer());
   return (
     <>
       <Header userLoggedIn={userLoggedIn} />

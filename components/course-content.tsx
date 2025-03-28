@@ -9,11 +9,28 @@ import {
 } from '@/components/ui/accordion';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import {
-  getProductContentById,
-  Lesson,
-  ProductContent,
-} from '@/lib/db/queries';
+
+type Lesson = {
+  name: string;
+  order: number;
+  content: {
+    content: string;
+    contentType: 'VIDEO' | 'MDX' | null;
+  };
+  mdxComponent?: JSX.Element;
+};
+
+export type ProductContent = {
+  name: string;
+  description: string | null;
+  image: string | null;
+  modules: {
+    name: string;
+    isExtraContent: boolean | null;
+    lessons: Lesson[];
+    order: number;
+  }[];
+};
 
 type Props = {
   courseData: ProductContent;
@@ -34,10 +51,10 @@ export default function CourseContent({ courseData }: Props) {
               <CardTitle>{selectedLesson.name}</CardTitle>
             </CardHeader>
             <CardContent>
-              {selectedLesson.contentType === 'VIDEO' ? (
+              {selectedLesson.content.contentType === 'VIDEO' ? (
                 <div className="aspect-w-16 aspect-h-9">
                   <iframe
-                    src={selectedLesson.content}
+                    src={selectedLesson.content.content}
                     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                     allowFullScreen
                   ></iframe>
@@ -51,7 +68,7 @@ export default function CourseContent({ courseData }: Props) {
           </Card>
         ) : (
           <img
-            src={courseData.images[0] || '/static/placeholder.jpg'}
+            src={courseData.image || '/static/placeholder.jpg'}
             alt={courseData.name}
             width={600}
             height={300}

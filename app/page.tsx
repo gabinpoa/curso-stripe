@@ -3,22 +3,32 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Rocket, Target, Zap, TrendingUp } from 'lucide-react';
 import {
+  getCustomerSubscriptionsProductsIds,
   getExpandedProductsWithPrices,
-  unsafeGetCustomerSubscriptionsProductsIds,
 } from '@/lib/payments/stripe';
 import { siteName, subject } from '@/lib/utils';
 import AuthButton from './(dashboard)/auth-button';
-import { getUser } from '@/lib/db/queries';
 import FeaturedCourses from '@/components/featured-courses';
+import { fetchUserAttributesServer } from '@/utils/amplify-utils';
 
 export default async function PaginaInicial() {
-  const [user, productsWithPrices, userSubscriptionsProductsIds] =
-    await Promise.all([
-      getUser(),
-      getExpandedProductsWithPrices(),
-      unsafeGetCustomerSubscriptionsProductsIds(),
-    ]);
-  const userLoggedIn = user !== null;
+  const userAttributes = await fetchUserAttributesServer();
+  const customerId = userAttributes?.['custom:customer_id'] || '';
+  let userLoggedIn = !!userAttributes?.email;
+
+  if (userAttributes) {
+    // Convert to array like ['key&value', 'key&value']
+    const userAttributesArr: string[] = Object.entries(userAttributes).map(
+      ([key, value]) => {
+        return `${key}&${value}`;
+      }
+    );
+    console.log(userAttributesArr);
+  }
+  const [productsWithPrices, userSubscriptionsProductsIds] = await Promise.all([
+    getExpandedProductsWithPrices(),
+    customerId === '' ? null : getCustomerSubscriptionsProductsIds(customerId),
+  ]);
 
   return (
     <div className="flex flex-col min-h-screen">

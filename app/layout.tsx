@@ -1,9 +1,12 @@
 import './globals.css';
 import type { Metadata, Viewport } from 'next';
 import { Manrope } from 'next/font/google';
-import { UserProvider } from '@/lib/auth';
-import { getUser } from '@/lib/db/queries';
 import { siteName } from '@/lib/utils';
+import ConfigureAmplifyClientSide from '@/components/configure-amplify';
+import outputs from '../amplify_outputs.json';
+import { Amplify } from 'aws-amplify';
+
+Amplify.configure(outputs);
 
 export const metadata: Metadata = {
   title: siteName,
@@ -21,15 +24,14 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
-  let userPromise = getUser();
-
   return (
     <html
       lang="en"
       className={`bg-white dark:bg-gray-950 text-black dark:text-white ${manrope.className}`}
     >
       <body className="min-h-[100dvh] bg-gray-50">
-        <UserProvider userPromise={userPromise}>{children}</UserProvider>
+        <ConfigureAmplifyClientSide />
+        {children}
       </body>
     </html>
   );

@@ -1,16 +1,13 @@
 import type React from 'react';
-import Link from 'next/link';
-import { siteName } from '@/lib/utils';
-import { Button } from '@/components/ui/button';
-import { getUser } from '@/lib/db/queries';
 import Header from '@/components/header';
+import { AuthGetCurrentUserServer } from '@/utils/amplify-utils';
 
 export default async function MainLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const userLoggedIn = (await getUser()) !== null;
+  const userLoggedIn = !!(await AuthGetCurrentUserServer());
   return (
     <>
       <Header userLoggedIn={userLoggedIn} />
