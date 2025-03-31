@@ -1,12 +1,7 @@
 import { getStripeProducts } from '../payments/stripe';
 import { db } from './drizzle';
 import { possibleModuleCombinations } from './sample-data';
-import {
-  modules,
-  lessons,
-  type NewModule,
-  type NewModuleLesson,
-} from './schema';
+import { modules, lessons, NewModule, NewModuleLesson } from './schema';
 
 async function seed() {
   const products = await getStripeProducts();

@@ -1,3 +1,4 @@
+import { relations } from 'drizzle-orm';
 import {
   pgTable,
   serial,
@@ -7,10 +8,12 @@ import {
   integer,
   pgEnum,
   boolean,
+  pgSchema,
 } from 'drizzle-orm/pg-core';
-import { relations } from 'drizzle-orm';
 
-export const users = pgTable('users', {
+export const mySchema = pgSchema('my_schema');
+
+export const users = mySchema.table('users', {
   id: serial('id').primaryKey(),
   name: varchar('name', { length: 100 }),
   email: varchar('email', { length: 255 }).notNull().unique(),
@@ -21,7 +24,7 @@ export const users = pgTable('users', {
   deletedAt: timestamp('deleted_at'),
 });
 
-export const teams = pgTable('teams', {
+export const teams = mySchema.table('teams', {
   id: serial('id').primaryKey(),
   name: varchar('name', { length: 100 }).notNull(),
   createdAt: timestamp('created_at').notNull().defaultNow(),
@@ -33,7 +36,7 @@ export const teams = pgTable('teams', {
   subscriptionStatus: varchar('subscription_status', { length: 20 }),
 });
 
-export const teamMembers = pgTable('team_members', {
+export const teamMembers = mySchema.table('team_members', {
   id: serial('id').primaryKey(),
   userId: integer('user_id')
     .notNull()
@@ -45,7 +48,7 @@ export const teamMembers = pgTable('team_members', {
   joinedAt: timestamp('joined_at').notNull().defaultNow(),
 });
 
-export const activityLogs = pgTable('activity_logs', {
+export const activityLogs = mySchema.table('activity_logs', {
   id: serial('id').primaryKey(),
   teamId: integer('team_id')
     .notNull()
@@ -56,7 +59,7 @@ export const activityLogs = pgTable('activity_logs', {
   ipAddress: varchar('ip_address', { length: 45 }),
 });
 
-export const invitations = pgTable('invitations', {
+export const invitations = mySchema.table('invitations', {
   id: serial('id').primaryKey(),
   teamId: integer('team_id')
     .notNull()
@@ -70,7 +73,7 @@ export const invitations = pgTable('invitations', {
   status: varchar('status', { length: 20 }).notNull().default('pending'),
 });
 
-export const modules = pgTable('modules', {
+export const modules = mySchema.table('modules', {
   id: serial('id').primaryKey(),
   productId: text('product_id').notNull(), // references to product in stripe
   name: varchar('name', { length: 100 }).notNull(),
@@ -79,9 +82,12 @@ export const modules = pgTable('modules', {
   isExtraContent: boolean('is_extra_content').notNull().default(false),
 });
 
-export const contentTypesEnum = pgEnum('content_types', ['MDX', 'VIDEO']);
+export const contentTypesEnum = mySchema.enum('content_types', [
+  'MDX',
+  'VIDEO',
+]);
 
-export const lessons = pgTable('lessons', {
+export const lessons = mySchema.table('lessons', {
   id: serial('id').primaryKey(),
   moduleId: integer('module_id')
     .notNull()
