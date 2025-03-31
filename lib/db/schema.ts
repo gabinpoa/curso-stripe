@@ -1,3 +1,4 @@
+import { relations } from 'drizzle-orm';
 import {
   pgTable,
   serial,
@@ -97,6 +98,61 @@ export const lessons = mySchema.table('lessons', {
   content: text('content').notNull(),
   order: integer('order').notNull(),
 });
+
+export const modulesRelations = relations(modules, ({ many }) => ({
+  lessons: many(lessons),
+}));
+
+export const lessonsRelations = relations(lessons, ({ one }) => ({
+  module: one(modules, {
+    fields: [lessons.moduleId],
+    references: [modules.id],
+  }),
+}));
+
+export const teamsRelations = relations(teams, ({ many }) => ({
+  teamMembers: many(teamMembers),
+  activityLogs: many(activityLogs),
+  invitations: many(invitations),
+}));
+
+export const usersRelations = relations(users, ({ many }) => ({
+  teamMembers: many(teamMembers),
+  invitationsSent: many(invitations),
+}));
+
+export const invitationsRelations = relations(invitations, ({ one }) => ({
+  team: one(teams, {
+    fields: [invitations.teamId],
+    references: [teams.id],
+  }),
+  invitedBy: one(users, {
+    fields: [invitations.invitedBy],
+    references: [users.id],
+  }),
+}));
+
+export const teamMembersRelations = relations(teamMembers, ({ one }) => ({
+  user: one(users, {
+    fields: [teamMembers.userId],
+    references: [users.id],
+  }),
+  team: one(teams, {
+    fields: [teamMembers.teamId],
+    references: [teams.id],
+  }),
+}));
+
+export const activityLogsRelations = relations(activityLogs, ({ one }) => ({
+  team: one(teams, {
+    fields: [activityLogs.teamId],
+    references: [teams.id],
+  }),
+  user: one(users, {
+    fields: [activityLogs.userId],
+    references: [users.id],
+  }),
+}));
 
 export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;
