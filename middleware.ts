@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import { signToken, verifyToken } from '@/lib/auth/session';
+import { signToken, verifyToken } from './lib/auth/token';
 
 const protectedRoutes = ['/dashboard', '/cursos', '/meus-cursos'];
 const exceptionRoute = '/visao-geral';

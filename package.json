@@ -49,5 +49,6 @@
     "tailwindcss-react-aria-components": "1.2.0",
     "typescript": "^5.7.3",
     "zod": "^3.24.1"
-  }
+  },
+  "packageManager": "pnpm@10.7.0"
 }

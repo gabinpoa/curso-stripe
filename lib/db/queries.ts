@@ -2,7 +2,7 @@ import { desc, and, eq, isNull, asc, inArray } from 'drizzle-orm';
 import { db } from './drizzle';
 import { activityLogs, modules, teamMembers, teams, users } from './schema';
 import { cookies } from 'next/headers';
-import { verifyToken } from '@/lib/auth/session';
+import { verifyToken } from '@/lib/auth/token';
 import {
   getPriceById,
   getProductById,
@@ -64,7 +64,8 @@ export async function unsafeGetCustomerId() {
     return null;
   }
 
-  const teamId = (await getUserWithTeam(userId)).teamId;
+  const userWithTeam = await getUserWithTeam(userId);
+  const teamId = userWithTeam ? userWithTeam.teamId : null;
   if (!teamId) {
     return null;
   }
@@ -111,6 +112,9 @@ export async function getUserWithTeam(userId: number) {
     .where(eq(users.id, userId))
     .limit(1);
 
+  if (result.length === 0) {
+    return null;
+  }
   return result[0];
 }
 
@@ -131,7 +135,8 @@ export async function getCustomerId() {
     return { message: 'User not authenticated' };
   }
 
-  const teamId = (await getUserWithTeam(user.id)).teamId;
+  const userWithTeam = await getUserWithTeam(user.id);
+  const teamId = userWithTeam ? userWithTeam.teamId : null;
   if (!teamId) {
     return { message: 'User is not part of any team' };
   }
