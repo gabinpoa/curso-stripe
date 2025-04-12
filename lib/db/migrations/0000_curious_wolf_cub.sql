@@ -1,5 +1,5 @@
 CREATE TABLE `activity_logs` (
-	`id` serial AUTO_INCREMENT NOT NULL,
+	`id` serial,
 	`team_id` bigint unsigned NOT NULL,
 	`user_id` bigint unsigned,
 	`action` text NOT NULL,
@@ -9,7 +9,7 @@ CREATE TABLE `activity_logs` (
 );
 --> statement-breakpoint
 CREATE TABLE `invitations` (
-	`id` serial AUTO_INCREMENT NOT NULL,
+	`id` serial,
 	`team_id` bigint unsigned NOT NULL,
 	`email` varchar(255) NOT NULL,
 	`role` varchar(50) NOT NULL,
@@ -20,7 +20,7 @@ CREATE TABLE `invitations` (
 );
 --> statement-breakpoint
 CREATE TABLE `lessons` (
-	`id` serial AUTO_INCREMENT NOT NULL,
+	`id` serial,
 	`module_id` bigint unsigned NOT NULL,
 	`name` varchar(100) NOT NULL,
 	`description` text,
@@ -31,7 +31,7 @@ CREATE TABLE `lessons` (
 );
 --> statement-breakpoint
 CREATE TABLE `modules` (
-	`id` serial AUTO_INCREMENT NOT NULL,
+	`id` serial,
 	`product_id` varchar(255) NOT NULL,
 	`name` varchar(100) NOT NULL,
 	`description` text,
@@ -41,7 +41,7 @@ CREATE TABLE `modules` (
 );
 --> statement-breakpoint
 CREATE TABLE `team_members` (
-	`id` serial AUTO_INCREMENT NOT NULL,
+	`id` serial,
 	`user_id` bigint unsigned NOT NULL,
 	`team_id` bigint unsigned NOT NULL,
 	`role` varchar(50) NOT NULL,
@@ -50,7 +50,7 @@ CREATE TABLE `team_members` (
 );
 --> statement-breakpoint
 CREATE TABLE `teams` (
-	`id` serial AUTO_INCREMENT NOT NULL,
+	`id` serial,
 	`name` varchar(100) NOT NULL,
 	`created_at` timestamp NOT NULL DEFAULT (now()),
 	`updated_at` timestamp NOT NULL DEFAULT (now()),
@@ -65,7 +65,7 @@ CREATE TABLE `teams` (
 );
 --> statement-breakpoint
 CREATE TABLE `users` (
-	`id` serial AUTO_INCREMENT NOT NULL,
+	`id` serial,
 	`name` varchar(100),
 	`email` varchar(255) NOT NULL,
 	`password_hash` varchar(255) NOT NULL,
