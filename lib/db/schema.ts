@@ -38,10 +38,10 @@ export const teams = mysqlTable('teams', {
 
 export const teamMembers = mysqlTable('team_members', {
   id: serial('id').primaryKey(),
-  userId: bigint('user_id', { unsigned: true, mode: 'bigint' })
+  userId: bigint('user_id', { unsigned: true, mode: 'number' })
     .notNull()
     .references(() => users.id),
-  teamId: bigint('team_id', { unsigned: true, mode: 'bigint' })
+  teamId: bigint('team_id', { unsigned: true, mode: 'number' })
     .notNull()
     .references(() => teams.id),
   role: varchar('role', { length: 50 }).notNull(),
@@ -50,10 +50,10 @@ export const teamMembers = mysqlTable('team_members', {
 
 export const activityLogs = mysqlTable('activity_logs', {
   id: serial('id').primaryKey(),
-  teamId: bigint('team_id', { unsigned: true, mode: 'bigint' })
+  teamId: bigint('team_id', { unsigned: true, mode: 'number' })
     .notNull()
     .references(() => teams.id),
-  userId: bigint('user_id', { unsigned: true, mode: 'bigint' }).references(
+  userId: bigint('user_id', { unsigned: true, mode: 'number' }).references(
     () => users.id
   ),
   action: text('action').notNull(),
@@ -63,12 +63,12 @@ export const activityLogs = mysqlTable('activity_logs', {
 
 export const invitations = mysqlTable('invitations', {
   id: serial('id').primaryKey(),
-  teamId: bigint('team_id', { unsigned: true, mode: 'bigint' })
+  teamId: bigint('team_id', { unsigned: true, mode: 'number' })
     .notNull()
     .references(() => teams.id),
   email: varchar('email', { length: 255 }).notNull(),
   role: varchar('role', { length: 50 }).notNull(),
-  invitedBy: bigint('invited_by', { unsigned: true, mode: 'bigint' })
+  invitedBy: bigint('invited_by', { unsigned: true, mode: 'number' })
     .notNull()
     .references(() => users.id),
   invitedAt: timestamp('invited_at').notNull().defaultNow(),
@@ -86,7 +86,7 @@ export const modules = mysqlTable('modules', {
 
 export const lessons = mysqlTable('lessons', {
   id: serial('id').primaryKey(),
-  moduleId: bigint('module_id', { unsigned: true, mode: 'bigint' })
+  moduleId: bigint('module_id', { unsigned: true, mode: 'number' })
     .notNull()
     .references(() => modules.id),
   name: varchar('name', { length: 100 }).notNull(),

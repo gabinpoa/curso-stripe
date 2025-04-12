@@ -1,3 +1,4 @@
+import { eq } from 'drizzle-orm';
 import { getStripeProducts } from '../payments/stripe';
 import { db } from './drizzle';
 import { possibleModuleCombinations } from './sample-data';
@@ -20,21 +21,30 @@ async function seed() {
         order,
       })
     );
+    const _ = await db.insert(modules).values(newModules);
     const productModules = await db
-      .insert(modules)
-      .values(newModules)
-      .returning();
-
-    for (const [j, module] of productModules.entries()) {
-      const newLessons: NewModuleLesson[] = possibleModuleCombinations[i][
-        j
-      ].lessons.map(({ name, content, contentType, order }) => ({
-        moduleId: module.id,
-        name,
-        content,
-        contentType,
-        order,
-      }));
+      .select()
+      .from(modules)
+      .where(eq(modules.productId, product.id));
+    for (const module of productModules) {
+      const possibleModuleForCreatedModule = possibleModuleCombinations[i].find(
+        (m) => m.order === module.order
+      );
+      if (!possibleModuleForCreatedModule) {
+        throw new Error(
+          `Module with order ${module.order} not found in possibleModuleCombinations.`
+        );
+      }
+      const newLessons: NewModuleLesson[] =
+        possibleModuleForCreatedModule.lessons.map(
+          ({ name, content, contentType, order }) => ({
+            moduleId: module.id,
+            name,
+            content,
+            contentType,
+            order,
+          })
+        );
       await db.insert(lessons).values(newLessons);
     }
   }
