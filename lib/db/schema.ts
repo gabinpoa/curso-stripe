@@ -1,96 +1,99 @@
+import { relations } from 'drizzle-orm';
 import {
-  pgTable,
+  mysqlTable,
   serial,
   varchar,
   text,
   timestamp,
-  integer,
-  pgEnum,
+  int,
+  mysqlEnum,
   boolean,
-} from 'drizzle-orm/pg-core';
-import { relations } from 'drizzle-orm';
+  bigint,
+} from 'drizzle-orm/mysql-core';
 
-export const users = pgTable('users', {
+export const users = mysqlTable('users', {
   id: serial('id').primaryKey(),
   name: varchar('name', { length: 100 }),
   email: varchar('email', { length: 255 }).notNull().unique(),
-  passwordHash: text('password_hash').notNull(),
+  passwordHash: varchar('password_hash', { length: 255 }).notNull(),
   role: varchar('role', { length: 20 }).notNull().default('member'),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
   deletedAt: timestamp('deleted_at'),
 });
 
-export const teams = pgTable('teams', {
+export const teams = mysqlTable('teams', {
   id: serial('id').primaryKey(),
   name: varchar('name', { length: 100 }).notNull(),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
-  stripeCustomerId: text('stripe_customer_id').unique(),
-  stripeSubscriptionId: text('stripe_subscription_id').unique(),
-  stripeProductId: text('stripe_product_id'),
+  stripeCustomerId: varchar('stripe_customer_id', { length: 255 }).unique(),
+  stripeSubscriptionId: varchar('stripe_subscription_id', {
+    length: 255,
+  }).unique(),
+  stripeProductId: varchar('stripe_product_id', { length: 255 }),
   planName: varchar('plan_name', { length: 50 }),
   subscriptionStatus: varchar('subscription_status', { length: 20 }),
 });
 
-export const teamMembers = pgTable('team_members', {
+export const teamMembers = mysqlTable('team_members', {
   id: serial('id').primaryKey(),
-  userId: integer('user_id')
+  userId: bigint('user_id', { unsigned: true, mode: 'bigint' })
     .notNull()
     .references(() => users.id),
-  teamId: integer('team_id')
+  teamId: bigint('team_id', { unsigned: true, mode: 'bigint' })
     .notNull()
     .references(() => teams.id),
   role: varchar('role', { length: 50 }).notNull(),
   joinedAt: timestamp('joined_at').notNull().defaultNow(),
 });
 
-export const activityLogs = pgTable('activity_logs', {
+export const activityLogs = mysqlTable('activity_logs', {
   id: serial('id').primaryKey(),
-  teamId: integer('team_id')
+  teamId: bigint('team_id', { unsigned: true, mode: 'bigint' })
     .notNull()
     .references(() => teams.id),
-  userId: integer('user_id').references(() => users.id),
+  userId: bigint('user_id', { unsigned: true, mode: 'bigint' }).references(
+    () => users.id
+  ),
   action: text('action').notNull(),
   timestamp: timestamp('timestamp').notNull().defaultNow(),
   ipAddress: varchar('ip_address', { length: 45 }),
 });
 
-export const invitations = pgTable('invitations', {
+export const invitations = mysqlTable('invitations', {
   id: serial('id').primaryKey(),
-  teamId: integer('team_id')
+  teamId: bigint('team_id', { unsigned: true, mode: 'bigint' })
     .notNull()
     .references(() => teams.id),
   email: varchar('email', { length: 255 }).notNull(),
   role: varchar('role', { length: 50 }).notNull(),
-  invitedBy: integer('invited_by')
+  invitedBy: bigint('invited_by', { unsigned: true, mode: 'bigint' })
     .notNull()
     .references(() => users.id),
   invitedAt: timestamp('invited_at').notNull().defaultNow(),
   status: varchar('status', { length: 20 }).notNull().default('pending'),
 });
 
-export const modules = pgTable('modules', {
+export const modules = mysqlTable('modules', {
   id: serial('id').primaryKey(),
-  productId: text('product_id').notNull(), // references to product in stripe
+  productId: varchar('product_id', { length: 255 }).notNull(), // references to product in stripe
   name: varchar('name', { length: 100 }).notNull(),
   description: text('description'),
-  order: integer('order').notNull(),
+  order: int('order').notNull(),
   isExtraContent: boolean('is_extra_content').notNull().default(false),
 });
 
-export const contentTypesEnum = pgEnum('content_types', ['MDX', 'VIDEO']);
-
-export const lessons = pgTable('lessons', {
+export const lessons = mysqlTable('lessons', {
   id: serial('id').primaryKey(),
-  moduleId: integer('module_id')
+  moduleId: bigint('module_id', { unsigned: true, mode: 'bigint' })
     .notNull()
     .references(() => modules.id),
   name: varchar('name', { length: 100 }).notNull(),
   description: text('description'),
-  contentType: contentTypesEnum('content_type').notNull(),
+  contentType: mysqlEnum('content_types', ['MDX', 'VIDEO']).notNull(),
   content: text('content').notNull(),
-  order: integer('order').notNull(),
+  order: int('order').notNull(),
 });
 
 export const modulesRelations = relations(modules, ({ many }) => ({
