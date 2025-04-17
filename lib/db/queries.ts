@@ -1,18 +1,22 @@
-import { desc, and, eq, isNull, asc, inArray } from 'drizzle-orm';
-import { db } from './drizzle';
-import { activityLogs, modules, teamMembers, teams, users } from './schema';
-import { cookies } from 'next/headers';
-import { verifyToken } from '@/lib/auth/token';
+import { desc, and, eq, isNull, asc, inArray } from "drizzle-orm";
+import { db } from "./drizzle";
 import {
-  getPriceById,
-  getProductById,
-  getValidSubscriptionByCustomerIdAndProductId,
-} from '../payments/stripe';
-import { JSX } from 'react';
-import Stripe from 'stripe';
+  activityLogs,
+  modules,
+  teamMembers,
+  buyRecord,
+  teams,
+  users,
+  BuyAction,
+} from "./schema";
+import { cookies } from "next/headers";
+import { verifyToken } from "@/lib/auth/token";
+import { getPriceById, getProductById } from "../payments/stripe";
+import { JSX } from "react";
+import Stripe from "stripe";
 
 export async function getUser() {
-  const sessionCookie = (await cookies()).get('session');
+  const sessionCookie = (await cookies()).get("session");
   if (!sessionCookie || !sessionCookie.value) {
     return null;
   }
@@ -21,7 +25,7 @@ export async function getUser() {
   if (
     !sessionData ||
     !sessionData.user ||
-    typeof sessionData.user.id !== 'number'
+    typeof sessionData.user.id !== "number"
   ) {
     return null;
   }
@@ -44,7 +48,7 @@ export async function getUser() {
 }
 
 export async function unsafeGetCustomerId() {
-  const sessionCookie = (await cookies()).get('session');
+  const sessionCookie = (await cookies()).get("session");
   if (!sessionCookie || !sessionCookie.value) {
     return null;
   }
@@ -53,7 +57,7 @@ export async function unsafeGetCustomerId() {
   if (
     !sessionData ||
     !sessionData.user ||
-    typeof sessionData.user.id !== 'number' ||
+    typeof sessionData.user.id !== "number" ||
     new Date(sessionData.expires) < new Date()
   ) {
     return null;
@@ -132,18 +136,18 @@ export async function getTeamCustomerId(teamId: number) {
 export async function getCustomerId() {
   const user = await getUser();
   if (!user) {
-    return { message: 'User not authenticated' };
+    return { message: "User not authenticated" };
   }
 
   const userWithTeam = await getUserWithTeam(user.id);
   const teamId = userWithTeam ? userWithTeam.teamId : null;
   if (!teamId) {
-    return { message: 'User is not part of any team' };
+    return { message: "User is not part of any team" };
   }
 
   const result = await getTeamCustomerId(teamId);
   if (!result) {
-    return { message: 'Team has no Stripe customer ID associated' };
+    return { message: "Team has no Stripe customer ID associated" };
   }
 
   return result;
@@ -152,7 +156,7 @@ export async function getCustomerId() {
 export async function getActivityLogs() {
   const user = await getUser();
   if (!user) {
-    throw new Error('User not authenticated');
+    throw new Error("User not authenticated");
   }
 
   return await db
@@ -209,21 +213,53 @@ export type ModulesAndLessonsMaybeComplete = {
 export type Lesson = {
   name: string;
   description: string | null;
-  contentType?: 'MDX' | 'VIDEO';
+  contentType?: "MDX" | "VIDEO";
   content?: string;
   mdxComponent?: JSX.Element;
 };
+
+async function getBuyRecordByCustomerIdAndProductId(
+  customerId: string,
+  productId: string
+) {
+  const result = await db
+    .select()
+    .from(buyRecord)
+    .where(
+      and(
+        eq(buyRecord.customerId, customerId),
+        eq(buyRecord.productId, productId)
+      )
+    )
+    .limit(1);
+  return result.length > 0 ? result[0] : null;
+}
+
+function hasNotRefundedPastSevenDays(teamProductBought: BuyAction) {
+  return (
+    !boughtInTheLastSevenDays(teamProductBought) &&
+    teamProductBought.status === "paid" &&
+    teamProductBought.refunded === false
+  );
+}
+
+function boughtInTheLastSevenDays(teamProductBought: BuyAction) {
+  const now = new Date();
+  const sevenDaysAgo = new Date(now);
+  sevenDaysAgo.setDate(now.getDate() - 7);
+  return teamProductBought.createdAt > sevenDaysAgo;
+}
 
 export async function getModulesAndLessonsByProductId(
   productId: string
 ): Promise<ModulesAndLessonsMaybeComplete | { message: string }> {
   const customerId = await getCustomerId();
 
-  if (typeof customerId === 'object' && 'message' in customerId) {
+  if (typeof customerId === "object" && "message" in customerId) {
     return customerId; // Return error message
   }
 
-  const subscription = await getValidSubscriptionByCustomerIdAndProductId(
+  const productBought = await getBuyRecordByCustomerIdAndProductId(
     customerId,
     productId
   );
@@ -249,13 +285,16 @@ export async function getModulesAndLessonsByProductId(
     orderBy: (modules, { asc }) => [asc(modules.order)],
   });
 
-  if (!subscription) {
-    return { message: 'User has no subscription to this product' };
-  } else if (subscription.status === 'active') {
-    // Return all content if user is subscribed and active
+  if (!productBought) {
+    return { message: "User hasn't bought this product" };
+  } else if (hasNotRefundedPastSevenDays(productBought)) {
+    // Return all content if user has bought the product and not refunded it in the last 7 days
     return allModules;
-  } else if (subscription.status === 'trialing') {
-    // Don't return extra content if user is on trial
+  } else if (
+    productBought.status === "paid" &&
+    productBought.refunded === false
+  ) {
+    // Don't return extra content if user has bought the product in the last 7 days and not refunded it
     return allModules.map((module) => {
       if (module.isExtraContent) {
         return {
@@ -270,7 +309,9 @@ export async function getModulesAndLessonsByProductId(
       }
     });
   } else {
-    return { message: 'User has no active subscription' };
+    return {
+      message: `Refunded: ${productBought.refunded}, Paid: ${productBought.status}`,
+    };
   }
 }
 
@@ -314,7 +355,7 @@ export async function getProductContentById(
   const product = await getProductById(productId);
   const modules = await getModulesAndLessonsByProductId(productId);
 
-  if ('message' in modules) {
+  if ("message" in modules) {
     return modules; // Return error message
   }
 
@@ -327,7 +368,7 @@ export async function getProductContentById(
 export async function getProductPreviewById(productId: string) {
   const product = await getProductById(productId);
   if (!product.defaultPriceId) {
-    throw new Error('Product has no default price');
+    throw new Error("Product has no default price");
   }
   const price = await getPriceById(product.defaultPriceId);
 

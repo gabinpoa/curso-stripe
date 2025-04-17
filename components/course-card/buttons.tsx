@@ -1,7 +1,7 @@
-import { checkoutAction } from '@/lib/payments/actions';
-import { SubmitButton } from '../submit-button';
-import { Button } from '../ui/button';
-import Link from 'next/link';
+import { checkoutAction } from "@/lib/payments/actions";
+import { SubmitButton } from "../submit-button";
+import { Button } from "../ui/button";
+import Link from "next/link";
 
 interface Props {
   productId: string;
@@ -29,6 +29,11 @@ export default function CourseCardButtons({
       </Button>
       <form className="w-full" action={checkoutAction}>
         <input type="hidden" name="priceId" value={priceId} />
+        <input
+          type="hidden"
+          name="redirectUrl"
+          value={`/cursos/${productId}/visao-geral`}
+        />
         <SubmitButton />
       </form>
     </>

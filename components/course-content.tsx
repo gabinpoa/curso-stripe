@@ -1,18 +1,15 @@
-'use client';
-import { useState } from 'react';
-import { Button } from '@/components/ui/button';
+"use client";
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
-} from '@/components/ui/accordion';
-import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import {
-  Lesson,
-  ProductContent,
-} from '@/lib/db/queries';
+} from "@/components/ui/accordion";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Lesson, ProductContent } from "@/lib/db/queries";
 
 type Props = {
   courseData: ProductContent;
@@ -33,12 +30,23 @@ export default function CourseContent({ courseData }: Props) {
               <CardTitle>{selectedLesson.name}</CardTitle>
             </CardHeader>
             <CardContent>
-              {selectedLesson.contentType === 'VIDEO' ? (
-                <div className="aspect-w-16 aspect-h-9">
+              {selectedLesson.contentType === "VIDEO" ? (
+                <div style={{ position: "relative", paddingTop: "56.25%" }}>
                   <iframe
-                    src={selectedLesson.content}
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                    allowFullScreen
+                    src={
+                      selectedLesson.content +
+                      "autoplay=false&loop=false&muted=false&preload=true&responsive=true&rememberPosition=true"
+                    }
+                    loading="lazy"
+                    style={{
+                      border: 0,
+                      position: "absolute",
+                      top: 0,
+                      height: "100%",
+                      width: "100%",
+                    }}
+                    allow="accelerometer;gyroscope;autoplay;encrypted-media;picture-in-picture;"
+                    allowFullScreen={true}
                   ></iframe>
                 </div>
               ) : (
@@ -50,7 +58,7 @@ export default function CourseContent({ courseData }: Props) {
           </Card>
         ) : (
           <img
-            src={courseData.images[0] || '/static/placeholder.jpg'}
+            src={courseData.images[0] || "/static/placeholder.jpg"}
             alt={courseData.name}
             width={600}
             height={300}
