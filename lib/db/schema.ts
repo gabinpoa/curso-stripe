@@ -8,11 +8,22 @@ import {
   int,
   mysqlEnum,
   boolean,
-  bigint,
 } from "drizzle-orm/mysql-core";
 
+export const products = mysqlTable("products", {
+  id: varchar("id", { length: 255 }).primaryKey(),
+  name: varchar("name", { length: 100 }).notNull(),
+  defaultPriceId: varchar("default_price_id", { length: 255 }).notNull(),
+  thumbnail: varchar("thumbnail", { length: 255 }).notNull(),
+  description: text("description"),
+  duration: varchar("duration", { length: 50 }),
+  level: varchar("level", { length: 50 }),
+  instructor: varchar("instructor", { length: 100 }),
+  checkoutUrl: varchar("checkout_url", { length: 255 }),
+});
+
 export const users = mysqlTable("users", {
-  id: serial("id").primaryKey(),
+  customerId: varchar("customer_id", { length: 255 }).primaryKey(),
   name: varchar("name", { length: 100 }),
   email: varchar("email", { length: 255 }).notNull().unique(),
   passwordHash: varchar("password_hash", { length: 255 }).notNull(),
@@ -20,39 +31,16 @@ export const users = mysqlTable("users", {
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
   deletedAt: timestamp("deleted_at"),
-  customerId: varchar("customer_id", { length: 255 }).unique().notNull(),
 });
 
-export const teams = mysqlTable("teams", {
+export const buyRecords = mysqlTable("buy_record", {
   id: serial("id").primaryKey(),
-  name: varchar("name", { length: 100 }).notNull(),
-  createdAt: timestamp("created_at").notNull().defaultNow(),
-  updatedAt: timestamp("updated_at").notNull().defaultNow(),
-  stripeCustomerId: varchar("stripe_customer_id", { length: 255 }).unique(),
-  stripeSubscriptionId: varchar("stripe_subscription_id", {
-    length: 255,
-  }).unique(),
-  stripeProductId: varchar("stripe_product_id", { length: 255 }),
-  planName: varchar("plan_name", { length: 50 }),
-  subscriptionStatus: varchar("subscription_status", { length: 20 }),
-});
-
-export const teamMembers = mysqlTable("team_members", {
-  id: serial("id").primaryKey(),
-  userId: bigint("user_id", { unsigned: true, mode: "number" })
+  customerId: varchar("customer_id", { length: 255 })
     .notNull()
-    .references(() => users.id),
-  teamId: bigint("team_id", { unsigned: true, mode: "number" })
+    .references(() => users.customerId), // references to customer in stripe
+  productId: varchar("product_id", { length: 255 })
     .notNull()
-    .references(() => teams.id),
-  role: varchar("role", { length: 50 }).notNull(),
-  joinedAt: timestamp("joined_at").notNull().defaultNow(),
-});
-
-export const buyRecord = mysqlTable("buy_record", {
-  id: serial("id").primaryKey(),
-  customerId: varchar("customer_id", { length: 255 }).notNull(), // references to customer in stripe
-  productId: varchar("product_id", { length: 255 }).notNull(), // references to product in stripe
+    .references(() => products.id), // references to product in stripe
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
   paymentIntentId: varchar("payment_intent_id", { length: 255 }),
@@ -64,56 +52,64 @@ export const buyRecord = mysqlTable("buy_record", {
   refunded: boolean("refunded").notNull().default(false),
 });
 
-export const activityLogs = mysqlTable("activity_logs", {
-  id: serial("id").primaryKey(),
-  teamId: bigint("team_id", { unsigned: true, mode: "number" })
-    .notNull()
-    .references(() => teams.id),
-  userId: bigint("user_id", { unsigned: true, mode: "number" }).references(
-    () => users.id
-  ),
-  action: text("action").notNull(),
-  timestamp: timestamp("timestamp").notNull().defaultNow(),
-  ipAddress: varchar("ip_address", { length: 45 }),
-});
-
-export const invitations = mysqlTable("invitations", {
-  id: serial("id").primaryKey(),
-  teamId: bigint("team_id", { unsigned: true, mode: "number" })
-    .notNull()
-    .references(() => teams.id),
-  email: varchar("email", { length: 255 }).notNull(),
-  role: varchar("role", { length: 50 }).notNull(),
-  invitedBy: bigint("invited_by", { unsigned: true, mode: "number" })
-    .notNull()
-    .references(() => users.id),
-  invitedAt: timestamp("invited_at").notNull().defaultNow(),
-  status: varchar("status", { length: 20 }).notNull().default("pending"),
-});
-
 export const modules = mysqlTable("modules", {
-  id: serial("id").primaryKey(),
+  id: varchar("id", { length: 255 }).primaryKey(),
   productId: varchar("product_id", { length: 255 }).notNull(), // references to product in stripe
   name: varchar("name", { length: 100 }).notNull(),
   description: text("description"),
   order: int("order").notNull(),
   isExtraContent: boolean("is_extra_content").notNull().default(false),
+  level: varchar("level", { length: 50 }),
 });
 
 export const lessons = mysqlTable("lessons", {
-  id: serial("id").primaryKey(),
-  moduleId: bigint("module_id", { unsigned: true, mode: "number" })
+  id: varchar("id", { length: 255 }).primaryKey(),
+  moduleId: varchar("module_id", { length: 255 })
     .notNull()
     .references(() => modules.id),
   name: varchar("name", { length: 100 }).notNull(),
   description: text("description"),
-  contentType: mysqlEnum("content_types", ["MDX", "VIDEO"]).notNull(),
+  contentType: mysqlEnum("content_types", [
+    "MDX",
+    "VIDEO",
+    "DOCUMENT",
+  ]).notNull(),
   content: text("content").notNull(),
   order: int("order").notNull(),
 });
 
-export const modulesRelations = relations(modules, ({ many }) => ({
+export const productsRelations = relations(products, ({ many }) => {
+  return {
+    buyRecord: many(buyRecords),
+    modules: many(modules),
+  };
+});
+
+export const usersRelations = relations(users, ({ many }) => {
+  return {
+    buyRecord: many(buyRecords),
+  };
+});
+
+export const buyRecordRelations = relations(buyRecords, ({ one }) => {
+  return {
+    user: one(users, {
+      fields: [buyRecords.customerId],
+      references: [users.customerId],
+    }),
+    product: one(products, {
+      fields: [buyRecords.productId],
+      references: [products.id],
+    }),
+  };
+});
+
+export const modulesRelations = relations(modules, ({ many, one }) => ({
   lessons: many(lessons),
+  products: one(products, {
+    fields: [modules.productId],
+    references: [products.id],
+  }),
 }));
 
 export const lessonsRelations = relations(lessons, ({ one }) => ({
@@ -123,86 +119,19 @@ export const lessonsRelations = relations(lessons, ({ one }) => ({
   }),
 }));
 
-export const teamsRelations = relations(teams, ({ many }) => ({
-  teamMembers: many(teamMembers),
-  activityLogs: many(activityLogs),
-  invitations: many(invitations),
-}));
-
-export const usersRelations = relations(users, ({ many }) => ({
-  teamMembers: many(teamMembers),
-  invitationsSent: many(invitations),
-}));
-
-export const invitationsRelations = relations(invitations, ({ one }) => ({
-  team: one(teams, {
-    fields: [invitations.teamId],
-    references: [teams.id],
-  }),
-  invitedBy: one(users, {
-    fields: [invitations.invitedBy],
-    references: [users.id],
-  }),
-}));
-
-export const teamMembersRelations = relations(teamMembers, ({ one }) => ({
-  user: one(users, {
-    fields: [teamMembers.userId],
-    references: [users.id],
-  }),
-  team: one(teams, {
-    fields: [teamMembers.teamId],
-    references: [teams.id],
-  }),
-}));
-
-export const activityLogsRelations = relations(activityLogs, ({ one }) => ({
-  team: one(teams, {
-    fields: [activityLogs.teamId],
-    references: [teams.id],
-  }),
-  user: one(users, {
-    fields: [activityLogs.userId],
-    references: [users.id],
-  }),
-}));
-
+export type Product = typeof products.$inferSelect;
+export type NewProduct = typeof products.$inferInsert;
 export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;
-export type Team = typeof teams.$inferSelect;
-export type NewTeam = typeof teams.$inferInsert;
-export type TeamMember = typeof teamMembers.$inferSelect;
-export type NewTeamMember = typeof teamMembers.$inferInsert;
-export type BuyAction = typeof buyRecord.$inferSelect;
-export type NewBuyAction = typeof buyRecord.$inferInsert;
-export type ActivityLog = typeof activityLogs.$inferSelect;
-export type NewActivityLog = typeof activityLogs.$inferInsert;
-export type Invitation = typeof invitations.$inferSelect;
-export type NewInvitation = typeof invitations.$inferInsert;
-export type TeamDataWithMembers = Team & {
-  teamMembers: (TeamMember & {
-    user: Pick<User, "id" | "name" | "email">;
-  })[];
-};
+export type BuyRecord = typeof buyRecords.$inferSelect;
+export type NewBuyRecord = typeof buyRecords.$inferInsert;
 export type Module = typeof modules.$inferSelect;
 export type NewModule = typeof modules.$inferInsert;
 export type ModuleLesson = typeof lessons.$inferSelect;
 export type NewModuleLesson = typeof lessons.$inferInsert;
 
-export enum ActivityType {
-  SIGN_UP = "SIGN_UP",
-  SIGN_IN = "SIGN_IN",
-  SIGN_OUT = "SIGN_OUT",
-  UPDATE_PASSWORD = "UPDATE_PASSWORD",
-  DELETE_ACCOUNT = "DELETE_ACCOUNT",
-  UPDATE_ACCOUNT = "UPDATE_ACCOUNT",
-  CREATE_TEAM = "CREATE_TEAM",
-  REMOVE_TEAM_MEMBER = "REMOVE_TEAM_MEMBER",
-  INVITE_TEAM_MEMBER = "INVITE_TEAM_MEMBER",
-  ACCEPT_INVITATION = "ACCEPT_INVITATION",
-}
-
 export enum ContentType {
   MDX = "MDX",
   VIDEO = "VIDEO",
+  DOCUMENT = "DOCUMENT",
 }

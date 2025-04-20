@@ -1,43 +1,23 @@
-import { desc, and, eq, isNull, asc, inArray } from "drizzle-orm";
+import { and, desc, eq, isNull, sql } from "drizzle-orm";
 import { db } from "./drizzle";
-import {
-  activityLogs,
-  modules,
-  teamMembers,
-  buyRecord,
-  teams,
-  users,
-  BuyAction,
-} from "./schema";
+import { BuyRecord, buyRecords, products, users } from "./schema";
 import { cookies } from "next/headers";
-import { verifyToken } from "@/lib/auth/token";
-import { getPriceById, getProductById } from "../payments/stripe";
-import { JSX } from "react";
-import Stripe from "stripe";
+import { verifyToken } from "../auth/token";
 
 export async function getUser() {
-  const sessionCookie = (await cookies()).get("session");
-  if (!sessionCookie || !sessionCookie.value) {
+  const sessionData = await getVerifiedSession();
+  if (!sessionData) {
     return null;
   }
-
-  const sessionData = await verifyToken(sessionCookie.value);
-  if (
-    !sessionData ||
-    !sessionData.user ||
-    typeof sessionData.user.id !== "number"
-  ) {
-    return null;
-  }
-
-  if (new Date(sessionData.expires) < new Date()) {
-    return null;
-  }
-
   const user = await db
     .select()
     .from(users)
-    .where(and(eq(users.id, sessionData.user.id), isNull(users.deletedAt)))
+    .where(
+      and(
+        eq(users.customerId, sessionData.user.customerId),
+        isNull(users.deletedAt)
+      )
+    )
     .limit(1);
 
   if (user.length === 0) {
@@ -47,7 +27,7 @@ export async function getUser() {
   return user[0];
 }
 
-export async function unsafeGetCustomerId() {
+export async function getVerifiedSession() {
   const sessionCookie = (await cookies()).get("session");
   if (!sessionCookie || !sessionCookie.value) {
     return null;
@@ -57,166 +37,204 @@ export async function unsafeGetCustomerId() {
   if (
     !sessionData ||
     !sessionData.user ||
-    typeof sessionData.user.id !== "number" ||
-    new Date(sessionData.expires) < new Date()
+    typeof sessionData.user.customerId !== "string"
   ) {
     return null;
   }
 
-  const userId = sessionData.user.id;
-  if (!userId) {
+  if (new Date(sessionData.expires) < new Date()) {
     return null;
   }
 
-  const userWithTeam = await getUserWithTeam(userId);
-  const teamId = userWithTeam ? userWithTeam.teamId : null;
-  if (!teamId) {
-    return null;
-  }
-
-  return getTeamCustomerId(teamId);
+  return sessionData;
 }
 
-export async function getTeamByStripeCustomerId(customerId: string) {
-  const result = await db
-    .select()
-    .from(teams)
-    .where(eq(teams.stripeCustomerId, customerId))
-    .limit(1);
+export type Lesson = {
+  name: string;
+  order: number;
+  contentType: "MDX" | "VIDEO" | "DOCUMENT";
+  content: string;
+  mdxComponent?: React.ReactNode | null;
+};
 
-  return result.length > 0 ? result[0] : null;
-}
+export type Module = {
+  id: string;
+  name: string;
+  order: number;
+  isExtraContent: boolean;
+  lessons: Lesson[];
+};
 
-export async function updateTeamSubscription(
-  teamId: number,
-  subscriptionData: {
-    stripeSubscriptionId: string | null;
-    stripeProductId: string | null;
-    planName: string | null;
-    subscriptionStatus: string;
-  }
-) {
-  await db
-    .update(teams)
-    .set({
-      ...subscriptionData,
-      updatedAt: new Date(),
-    })
-    .where(eq(teams.id, teamId));
-}
+export type CourseWithModulesWithLessons = {
+  id: string;
+  name: string;
+  thumbnail: string;
+  description: string | null;
+  modules: Module[];
+};
 
-export async function getUserWithTeam(userId: number) {
-  const result = await db
-    .select({
-      user: users,
-      teamId: teamMembers.teamId,
-    })
-    .from(users)
-    .leftJoin(teamMembers, eq(users.id, teamMembers.userId))
-    .where(eq(users.id, userId))
-    .limit(1);
-
-  if (result.length === 0) {
-    return null;
-  }
-  return result[0];
-}
-
-export async function getTeamCustomerId(teamId: number) {
-  const result = await db.query.teams.findFirst({
-    where: eq(teams.id, teamId),
+export async function getCourseWithFullModules(
+  productId: string
+): Promise<CourseWithModulesWithLessons | null> {
+  const course = await db.query.products.findFirst({
     columns: {
-      stripeCustomerId: true,
+      id: true,
+      name: true,
+      thumbnail: true,
+      description: true,
     },
-  });
-
-  return result?.stripeCustomerId || null;
-}
-
-export async function getCustomerId() {
-  const user = await getUser();
-  if (!user) {
-    return { message: "User not authenticated" };
-  }
-
-  const userWithTeam = await getUserWithTeam(user.id);
-  const teamId = userWithTeam ? userWithTeam.teamId : null;
-  if (!teamId) {
-    return { message: "User is not part of any team" };
-  }
-
-  const result = await getTeamCustomerId(teamId);
-  if (!result) {
-    return { message: "Team has no Stripe customer ID associated" };
-  }
-
-  return result;
-}
-
-export async function getActivityLogs() {
-  const user = await getUser();
-  if (!user) {
-    throw new Error("User not authenticated");
-  }
-
-  return await db
-    .select({
-      id: activityLogs.id,
-      action: activityLogs.action,
-      timestamp: activityLogs.timestamp,
-      ipAddress: activityLogs.ipAddress,
-      userName: users.name,
-    })
-    .from(activityLogs)
-    .leftJoin(users, eq(activityLogs.userId, users.id))
-    .where(eq(activityLogs.userId, user.id))
-    .orderBy(desc(activityLogs.timestamp))
-    .limit(10);
-}
-
-export async function getTeamForUser(userId: number) {
-  const result = await db.query.users.findFirst({
-    where: eq(users.id, userId),
     with: {
-      teamMembers: {
+      modules: {
+        columns: {
+          id: true,
+          name: true,
+          order: true,
+          isExtraContent: true,
+        },
         with: {
-          team: {
-            with: {
-              teamMembers: {
-                with: {
-                  user: {
-                    columns: {
-                      id: true,
-                      name: true,
-                      email: true,
-                    },
-                  },
-                },
-              },
+          lessons: {
+            columns: {
+              content: true,
+              contentType: true,
+              name: true,
+              order: true,
             },
           },
         },
       },
     },
+    where: eq(products.id, productId),
   });
 
-  return result?.teamMembers[0]?.team || null;
+  return course ? course : null;
 }
 
-export type ModulesAndLessonsMaybeComplete = {
-  name: string;
-  description: string | null;
-  isExtraContent: boolean;
-  lessons: Lesson[];
-}[];
+export async function getCourseWithNonExtraModulesContent(
+  productId: string
+): Promise<CourseWithModulesWithLessons | null> {
+  const course = await db.query.products.findFirst({
+    columns: {
+      id: true,
+      name: true,
+      thumbnail: true,
+      description: true,
+    },
+    with: {
+      modules: {
+        columns: {
+          id: true,
+          name: true,
+          order: true,
+          isExtraContent: true,
+        },
+        with: {
+          lessons: {
+            columns: {
+              content: true,
+              contentType: true,
+              name: true,
+              order: true,
+            },
+          },
+        },
+      },
+    },
+    where: eq(products.id, productId),
+  });
+  if (!course) return null;
+  course.modules = course.modules.map((module_) => {
+    if (!module_.isExtraContent) {
+      return module_;
+    }
+    module_.lessons = module_.lessons.map((lesson) => {
+      return {
+        ...lesson,
+        content: "# Esse conteúdo fica disponível 7 dias após a compra",
+        contentType: "MDX",
+      };
+    });
+    return module_;
+  });
+  return course;
+}
 
-export type Lesson = {
-  name: string;
-  description: string | null;
-  contentType?: "MDX" | "VIDEO";
-  content?: string;
-  mdxComponent?: JSX.Element;
-};
+export async function getCoursePreview(productId: string) {
+  const course = await db.query.products.findFirst({
+    with: {
+      modules: {
+        with: {
+          lessons: {
+            columns: {
+              content: false,
+              contentType: false,
+            },
+          },
+        },
+      },
+    },
+    where: eq(products.id, productId),
+  });
+
+  return course;
+}
+
+export async function getCustomerBoughtProductsModules() {
+  const session = await getVerifiedSession();
+  if (!session) {
+    return undefined;
+  }
+  const userBoughtRecords = await db.query.buyRecords.findMany({
+    columns: {},
+    with: {
+      product: {
+        columns: {
+          id: true,
+          name: true,
+          defaultPriceId: true,
+          thumbnail: true,
+          description: true,
+        },
+        with: {
+          modules: {
+            columns: {
+              id: true,
+              name: true,
+              order: true,
+              isExtraContent: true,
+            },
+          },
+        },
+      },
+    },
+    where: and(
+      eq(buyRecords.customerId, session.user.customerId),
+      eq(buyRecords.status, "paid"),
+      eq(buyRecords.refunded, false)
+    ),
+  });
+  return userBoughtRecords.map((record) => record.product);
+}
+
+export async function getCustomerBoughtProductsIds() {
+  const session = await getVerifiedSession();
+  if (!session) {
+    return undefined;
+  }
+  const userWithBoughtProducts = await db.execute(
+    sql.raw(`
+    SELECT b.product_id FROM users u
+    INNER JOIN buy_record b ON u.customer_id = b.customer_id
+    WHERE b.status = 'paid' AND b.refunded = false
+    AND u.deleted_at IS NULL AND u.customer_id = '${session.user.customerId}'
+  `)
+  );
+  const productsIds = Array.isArray(userWithBoughtProducts[0])
+    ? userWithBoughtProducts[0].map(
+        (record: { product_id: string }) => record.product_id
+      )
+    : [];
+  return productsIds;
+}
 
 async function getBuyRecordByCustomerIdAndProductId(
   customerId: string,
@@ -224,18 +242,19 @@ async function getBuyRecordByCustomerIdAndProductId(
 ) {
   const result = await db
     .select()
-    .from(buyRecord)
+    .from(buyRecords)
     .where(
       and(
-        eq(buyRecord.customerId, customerId),
-        eq(buyRecord.productId, productId)
+        eq(buyRecords.customerId, customerId),
+        eq(buyRecords.productId, productId)
       )
     )
+    .orderBy(desc(buyRecords.createdAt))
     .limit(1);
   return result.length > 0 ? result[0] : null;
 }
 
-function hasNotRefundedPastSevenDays(teamProductBought: BuyAction) {
+function hasNotRefundedPastSevenDays(teamProductBought: BuyRecord) {
   return (
     !boughtInTheLastSevenDays(teamProductBought) &&
     teamProductBought.status === "paid" &&
@@ -243,146 +262,49 @@ function hasNotRefundedPastSevenDays(teamProductBought: BuyAction) {
   );
 }
 
-function boughtInTheLastSevenDays(teamProductBought: BuyAction) {
+function boughtInTheLastSevenDays(buyRecord: BuyRecord) {
   const now = new Date();
   const sevenDaysAgo = new Date(now);
   sevenDaysAgo.setDate(now.getDate() - 7);
-  return teamProductBought.createdAt > sevenDaysAgo;
+  return buyRecord.createdAt > sevenDaysAgo;
 }
 
-export async function getModulesAndLessonsByProductId(
+export type UserAccessToCourseStatus = "allow_full" | "allow_partial" | "deny";
+async function getUserAccessToCourseStatus(
+  customerId: string,
   productId: string
-): Promise<ModulesAndLessonsMaybeComplete | { message: string }> {
-  const customerId = await getCustomerId();
-
-  if (typeof customerId === "object" && "message" in customerId) {
-    return customerId; // Return error message
-  }
-
+): Promise<UserAccessToCourseStatus> {
   const productBought = await getBuyRecordByCustomerIdAndProductId(
     customerId,
     productId
   );
 
-  const allModules = await db.query.modules.findMany({
-    columns: {
-      name: true,
-      description: true,
-      isExtraContent: true,
-    },
-    where: eq(modules.productId, productId),
-    with: {
-      lessons: {
-        columns: {
-          name: true,
-          description: true,
-          contentType: true,
-          content: true,
-        },
-        orderBy: (lessons, { asc }) => [asc(lessons.order)],
-      },
-    },
-    orderBy: (modules, { asc }) => [asc(modules.order)],
-  });
-
   if (!productBought) {
-    return { message: "User hasn't bought this product" };
+    return "deny";
   } else if (hasNotRefundedPastSevenDays(productBought)) {
-    // Return all content if user has bought the product and not refunded it in the last 7 days
-    return allModules;
+    return "allow_full";
   } else if (
     productBought.status === "paid" &&
     productBought.refunded === false
   ) {
-    // Don't return extra content if user has bought the product in the last 7 days and not refunded it
-    return allModules.map((module) => {
-      if (module.isExtraContent) {
-        return {
-          ...module,
-          lessons: module.lessons.map((lesson) => ({
-            name: lesson.name,
-            description: lesson.description,
-          })),
-        };
-      } else {
-        return module;
-      }
-    });
+    return "allow_partial";
   } else {
-    return {
-      message: `Refunded: ${productBought.refunded}, Paid: ${productBought.status}`,
-    };
+    return "deny";
   }
 }
 
-export async function getModulesAndLessonsPreviewByProductId(
-  productId: string
-) {
-  const result = await db.query.modules.findMany({
-    where: eq(modules.productId, productId),
-    columns: {
-      name: true,
-      description: true,
-      isExtraContent: true,
-    },
-    with: {
-      lessons: {
-        columns: {
-          name: true,
-          description: true,
-        },
-        orderBy: (lessons, { asc }) => [asc(lessons.order)],
-      },
-    },
-    orderBy: (modules, { asc }) => [asc(modules.order)],
-  });
-
-  return result;
-}
-
-export type ProductContent = {
-  modules: ModulesAndLessonsMaybeComplete;
-  id: string;
-  name: string;
-  description: string | null;
-  defaultPriceId: string;
-  metadata: Stripe.Metadata;
-  images: string[];
-};
-export async function getProductContentById(
-  productId: string
-): Promise<ProductContent | { message: string }> {
-  const product = await getProductById(productId);
-  const modules = await getModulesAndLessonsByProductId(productId);
-
-  if ("message" in modules) {
-    return modules; // Return error message
+export async function getCourse(productId: string) {
+  const session = await getVerifiedSession();
+  if (!session) {
+    return null;
   }
-
-  return {
-    ...product,
-    modules,
-  };
-}
-
-export async function getProductPreviewById(productId: string) {
-  const product = await getProductById(productId);
-  if (!product.defaultPriceId) {
-    throw new Error("Product has no default price");
+  const customerId = session.user.customerId;
+  const userAccess = await getUserAccessToCourseStatus(customerId, productId);
+  if (userAccess === "deny") {
+    return null;
+  } else if (userAccess === "allow_partial") {
+    return await getCourseWithNonExtraModulesContent(productId);
+  } else {
+    return await getCourseWithFullModules(productId);
   }
-  const price = await getPriceById(product.defaultPriceId);
-
-  return {
-    ...product,
-    price,
-    modules: await getModulesAndLessonsPreviewByProductId(productId),
-  };
-}
-
-export async function getProductsModulesPreview(productIds: string[]) {
-  return await db
-    .select()
-    .from(modules)
-    .where(inArray(modules.productId, productIds))
-    .orderBy(asc(modules.order));
 }

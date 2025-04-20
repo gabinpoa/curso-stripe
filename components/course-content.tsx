@@ -9,10 +9,11 @@ import {
 } from "@/components/ui/accordion";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Lesson, ProductContent } from "@/lib/db/queries";
+import Image from "next/image";
+import { CourseWithModulesWithLessons, Lesson } from "@/lib/db/queries";
 
 type Props = {
-  courseData: ProductContent;
+  courseData: CourseWithModulesWithLessons;
 };
 export default function CourseContent({ courseData }: Props) {
   const [selectedLesson, setSelectedLesson] = useState<Lesson>(
@@ -35,7 +36,7 @@ export default function CourseContent({ courseData }: Props) {
                   <iframe
                     src={
                       selectedLesson.content +
-                      "autoplay=false&loop=false&muted=false&preload=true&responsive=true&rememberPosition=true"
+                      "?autoplay=false&loop=false&muted=false&preload=true&responsive=true&rememberPosition=true"
                     }
                     loading="lazy"
                     style={{
@@ -57,8 +58,8 @@ export default function CourseContent({ courseData }: Props) {
             </CardContent>
           </Card>
         ) : (
-          <img
-            src={courseData.images[0] || "/static/placeholder.jpg"}
+          <Image
+            src={courseData.thumbnail || "/static/placeholder.jpg"}
             alt={courseData.name}
             width={600}
             height={300}

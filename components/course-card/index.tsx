@@ -1,4 +1,4 @@
-import Stripe from 'stripe';
+import Stripe from "stripe";
 import {
   Card,
   CardContent,
@@ -6,16 +6,17 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from '../ui/card';
-import CourseCardButtons from './buttons';
+} from "../ui/card";
+import CourseCardButtons from "./buttons";
+import Image from "next/image";
 
 interface Props {
   product: Stripe.Product;
   isSubscribed: boolean;
 }
 export default function CourseCard({ product, isSubscribed }: Props) {
-  if (!product.default_price || typeof product.default_price !== 'object') {
-    throw new Error('Product default price is missing or invalid');
+  if (!product.default_price || typeof product.default_price !== "object") {
+    throw new Error("Product default price is missing or invalid");
   }
 
   const formattedPrice = (product.default_price.unit_amount! / 100).toFixed(2);
@@ -23,10 +24,12 @@ export default function CourseCard({ product, isSubscribed }: Props) {
   return (
     <Card className="flex flex-col justify-between" key={product.id}>
       <CardHeader className="justify-center overflow-hidden items-center">
-        <img
-          src={product.images[0] || '/static/placeholder.png'}
+        <Image
+          src={product.images[0] || "/static/placeholder.png"}
           alt={product.name}
           className="rounded-md"
+          width={500}
+          height={300}
         />
       </CardHeader>
       <CardContent>

@@ -1,5 +1,5 @@
-import Link from 'next/link';
-import { CircleIcon } from 'lucide-react';
+import Link from "next/link";
+import { CircleIcon } from "lucide-react";
 
 export default function NotFound() {
   return (
@@ -9,17 +9,17 @@ export default function NotFound() {
           <CircleIcon className="size-12 text-orange-500" />
         </div>
         <h1 className="text-4xl font-bold text-gray-900 tracking-tight">
-          Page Not Found
+          Página Não Encontrada
         </h1>
         <p className="text-base text-gray-500">
-          The page you are looking for might have been removed, had its name
-          changed, or is temporarily unavailable.
+          A página que você está procurando pode ter sido removida, teve seu
+          nome alterado ou está temporariamente indisponível.
         </p>
         <Link
           href="/"
           className="max-w-48 mx-auto flex justify-center py-2 px-4 border border-gray-300 rounded-full shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500"
         >
-          Back to Home
+          Voltar para a Página Inicial
         </Link>
       </div>
     </div>

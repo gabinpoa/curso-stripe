@@ -1,16 +1,18 @@
-import type React from 'react';
-import { getUser } from '@/lib/db/queries';
-import Header from '@/components/header';
+import type React from "react";
+import { getUser } from "@/lib/db/queries";
+import Header from "@/components/header";
 
 export default async function MainLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const userLoggedIn = (await getUser()) !== null;
+  const user = await getUser();
+  const userLoggedIn = !!user;
+  const email = user?.email || undefined;
   return (
     <>
-      <Header userLoggedIn={userLoggedIn} />
+      <Header userLoggedIn={userLoggedIn} email={email} />
       <main className="container mx-auto py-6">{children}</main>
     </>
   );

@@ -1,22 +1,20 @@
-import Link from 'next/link';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Rocket, Target, Zap, TrendingUp } from 'lucide-react';
-import {
-  getExpandedProductsWithPrices,
-  unsafeGetCustomerSubscriptionsProductsIds,
-} from '@/lib/payments/stripe';
-import { siteName, subject } from '@/lib/utils';
-import AuthButton from './(dashboard)/auth-button';
-import { getUser } from '@/lib/db/queries';
-import FeaturedCourses from '@/components/featured-courses';
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Rocket, Target, Zap, TrendingUp } from "lucide-react";
+import { getExpandedProductsWithPrices } from "@/lib/payments/stripe";
+import { siteName, subject } from "@/lib/utils";
+import AuthButton from "./(dashboard)/auth-button";
+import { getCustomerBoughtProductsIds, getUser } from "@/lib/db/queries";
+import FeaturedCourses from "@/components/featured-courses";
+import UserHeaderMenu from "@/components/user-header-menu";
 
 export default async function PaginaInicial() {
-  const [user, productsWithPrices, userSubscriptionsProductsIds] =
+  const [user, productsWithPrices, customerBoughtProductsIds] =
     await Promise.all([
       getUser(),
       getExpandedProductsWithPrices(),
-      unsafeGetCustomerSubscriptionsProductsIds(),
+      getCustomerBoughtProductsIds(),
     ]);
   const userLoggedIn = user !== null;
 
@@ -28,7 +26,7 @@ export default async function PaginaInicial() {
             <Link href="/" className="text-2xl font-bold">
               {siteName}
             </Link>
-            <div className="space-x-4">
+            <div className="gap-4 flex items-center">
               <AuthButton
                 userLoggedIn={userLoggedIn}
                 variant="secondary"
@@ -37,11 +35,7 @@ export default async function PaginaInicial() {
               <Link href="#cursos" className="hover:underline">
                 Cursos
               </Link>
-              {userLoggedIn && (
-                <Link href="/dashboard" className="hover:underline">
-                  Configurações
-                </Link>
-              )}
+              {userLoggedIn && <UserHeaderMenu email={user.email} />}
             </div>
           </nav>
         </div>
@@ -122,7 +116,7 @@ export default async function PaginaInicial() {
               Cursos em Destaque
             </h2>
             <FeaturedCourses
-              userSubscriptionsProductsIds={userSubscriptionsProductsIds}
+              userSubscriptionsProductsIds={customerBoughtProductsIds || []}
               productsWithPrices={productsWithPrices}
             />
           </div>

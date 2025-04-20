@@ -4,65 +4,45 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import Link from 'next/link';
-import { Badge } from '@/components/ui/badge';
-import { getExpandedCustomerValidSubscriptions } from '@/lib/payments/stripe';
-import { getCustomerId, getProductsModulesPreview } from '@/lib/db/queries';
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import Link from "next/link";
+import { Badge } from "@/components/ui/badge";
+import { getCustomerBoughtProductsModules } from "@/lib/db/queries";
+import Image from "next/image";
 
 export default async function PaginaMeusCursos() {
-  const customerId = await getCustomerId();
+  const boughtProductsWithModules = await getCustomerBoughtProductsModules();
 
-  if (typeof customerId === 'object' && 'message' in customerId) {
-    console.log(customerId.message);
-    return <NotSubscribedToAnyCourse />;
+  if (!boughtProductsWithModules || boughtProductsWithModules.length === 0) {
+    return <DoNotHaveAnyCourses />;
   }
-
-  const subscriptions = await getExpandedCustomerValidSubscriptions(customerId);
-
-  if (subscriptions.length === 0) {
-    return <NotSubscribedToAnyCourse />;
-  }
-
-  const productsIds = subscriptions.map(
-    (subscription) => subscription.product.id
-  );
-
-  const coursesModules = await getProductsModulesPreview(productsIds);
-
-  const subscribedCourses = subscriptions.map((subscription) => {
-    const product = subscription.product;
-    const modules = coursesModules.filter(
-      (module) => module.productId === product.id
-    );
-    return {
-      id: product.id,
-      name: product.name,
-      description: product.description,
-      images: product.images,
-      modules,
-    };
-  });
 
   return (
     <div className="container mx-auto py-8">
       <h1 className="text-3xl font-bold mb-6">Meus Cursos</h1>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {subscribedCourses.map((course) => (
-          <CourseCard key={course.id} {...course} />
+        {boughtProductsWithModules.map((course) => (
+          <CourseCard
+            key={course.id}
+            description={course.description}
+            id={course.id}
+            images={[course.thumbnail]}
+            modules={course.modules}
+            name={course.name}
+          />
         ))}
       </div>
     </div>
   );
 }
 
-function NotSubscribedToAnyCourse() {
+function DoNotHaveAnyCourses() {
   return (
     <div className="container mx-auto py-8 text-center">
       <h1 className="text-3xl font-bold mb-6">Meus Cursos</h1>
       <p className="text-lg text-gray-600">
-        Você ainda não se inscreveu em nenhum curso.
+        Você ainda não adquiriu nenhum curso.
       </p>
       <Link href="/#cursos" passHref>
         <Button className="mt-4">Ver Cursos</Button>
@@ -77,10 +57,9 @@ interface CourseCardProps {
   description: string | null;
   images: string[];
   modules: {
-    id: number;
-    productId: string;
+    id: string;
+    description?: string | null;
     name: string;
-    description: string | null;
     order: number;
     isExtraContent: boolean;
   }[];
@@ -90,8 +69,8 @@ function CourseCard(course: CourseCardProps) {
   return (
     <Card key={course.id} className="flex flex-col">
       <CardHeader className="items-center">
-        <img
-          src={course.images[0] || '/static/placeholder.png'}
+        <Image
+          src={course.images[0] || "/static/placeholder.png"}
           alt={course.name}
           width={300}
           height={150}

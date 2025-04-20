@@ -1,8 +1,15 @@
-import { siteName } from '@/lib/utils';
-import Link from 'next/link';
-import { Button } from './ui/button';
+import { siteName } from "@/lib/utils";
+import Link from "next/link";
+import { Button } from "./ui/button";
+import UserHeaderMenu from "./user-header-menu";
 
-export default function Header({ userLoggedIn }: { userLoggedIn: boolean }) {
+export default function Header({
+  userLoggedIn,
+  email,
+}: {
+  userLoggedIn: boolean;
+  email?: string;
+}) {
   return (
     <header className="container mx-auto py-6">
       <nav className="flex justify-between items-center">
@@ -27,12 +34,7 @@ export default function Header({ userLoggedIn }: { userLoggedIn: boolean }) {
               >
                 Meus Cursos
               </Link>
-              <Link
-                href="/dashboard"
-                className="text-sm text-zinc-600 hover:text-zinc-900"
-              >
-                Configurações
-              </Link>
+              <UserHeaderMenu email={email} />
             </>
           ) : (
             <Button

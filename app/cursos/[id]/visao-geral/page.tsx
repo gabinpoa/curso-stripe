@@ -4,22 +4,31 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@/components/ui/card';
+} from "@/components/ui/card";
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
-} from '@/components/ui/accordion';
-import { Badge } from '@/components/ui/badge';
-import { getProductPreviewById } from '@/lib/db/queries';
-import { SubmitButton } from '@/components/submit-button';
-import { checkoutAction } from '@/lib/payments/actions';
+} from "@/components/ui/accordion";
+import { Badge } from "@/components/ui/badge";
+import { getCoursePreview } from "@/lib/db/queries";
+import { SubmitButton } from "@/components/submit-button";
+import { checkoutAction } from "@/lib/payments/actions";
+import { notFound } from "next/navigation";
+import { getPriceById } from "@/lib/payments/stripe";
+import Image from "next/image";
 
 type Props = { params: Promise<{ id: string }> };
 export default async function Page({ params }: Props) {
   const { id } = await params;
-  const courseData = await getProductPreviewById(id);
+  const courseData = await getCoursePreview(id);
+
+  if (!courseData) {
+    notFound();
+  }
+
+  const price = await getPriceById(courseData.defaultPriceId);
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -34,27 +43,30 @@ export default async function Page({ params }: Props) {
           </CardHeader>
           <CardContent>
             <dl className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {courseData.metadata.instructor && (
+              {courseData.instructor && (
                 <div>
                   <dt className="font-semibold">Instrutor</dt>
-                  <dd>{courseData.metadata.instructor}</dd>
+                  <dd>{courseData.instructor}</dd>
                 </div>
               )}
-              {courseData.metadata.duration && (
+              {courseData.duration && (
                 <div>
                   <dt className="font-semibold">Duração</dt>
-                  <dd>{courseData.metadata.duration}</dd>
+                  <dd>{courseData.duration}</dd>
                 </div>
               )}
-              {courseData.metadata.level && (
+              {courseData.level && (
                 <div>
                   <dt className="font-semibold">Nível</dt>
-                  <dd>{courseData.metadata.level}</dd>
+                  <dd>{courseData.level}</dd>
                 </div>
               )}
               <div>
                 <dt className="font-semibold">Preço</dt>
-                <dd>R$ {courseData.price.unitAmount / 100}</dd>
+                <dd>
+                  {price.currency === "usd" ? "$ " : "R$ "}
+                  {price.unitAmount / 100}
+                </dd>
               </div>
             </dl>
           </CardContent>
@@ -96,8 +108,8 @@ export default async function Page({ params }: Props) {
       <div>
         <Card>
           <CardHeader>
-            <img
-              src={courseData.images[0] || '/static/placeholder.png'}
+            <Image
+              src={courseData.thumbnail || "/static/placeholder.png"}
               alt={courseData.name}
               width={300}
               height={200}
@@ -106,7 +118,8 @@ export default async function Page({ params }: Props) {
           </CardHeader>
           <CardContent>
             <CardTitle className="mb-2">
-              R$ {courseData.price.unitAmount / 100}
+              {price.currency === "usd" ? "$ " : "R$ "}
+              {price.unitAmount / 100}
             </CardTitle>
             <CardDescription className="mb-4">
               Obtenha acesso instantâneo a este curso

@@ -1,4 +1,3 @@
-import { getProductContentById, ProductContent } from "@/lib/db/queries";
 import { MDXRemote } from "next-mdx-remote-client/rsc";
 import CourseContent from "@/components/course-content";
 import {
@@ -8,6 +7,7 @@ import {
   OlHTMLAttributes,
 } from "react";
 import { redirect } from "next/navigation";
+import { CourseWithModulesWithLessons, getCourse } from "@/lib/db/queries";
 
 const components = {
   h1: (
@@ -50,7 +50,7 @@ const components = {
   ),
 };
 
-function addMdxSourceToContent(content: ProductContent) {
+function addMdxSourceToContent(content: CourseWithModulesWithLessons) {
   const modules = content.modules.map((module) => {
     module.lessons = module.lessons.map((lesson) => {
       if (!lesson.content) {
@@ -77,10 +77,9 @@ type Props = { params: Promise<{ id: string }> };
 export default async function Page({ params }: Props) {
   const { id } = await params;
 
-  let courseContent = await getProductContentById(id);
-  if ("message" in courseContent) {
+  let courseContent = await getCourse(id);
+  if (!courseContent) {
     redirect("/cursos/" + id + "/visao-geral");
-    console.error(courseContent);
   }
   courseContent = addMdxSourceToContent(courseContent);
 
