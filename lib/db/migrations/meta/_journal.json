@@ -8,6 +8,13 @@
       "when": 1744999804222,
       "tag": "0000_lumpy_yellowjacket",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "5",
+      "when": 1745291356275,
+      "tag": "0001_yummy_mauler",
+      "breakpoints": true
     }
   ]
 }

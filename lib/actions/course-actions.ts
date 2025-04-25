@@ -1,24 +1,21 @@
-"use server";
+'use server';
 
-import { db } from "@/lib/db/drizzle"; // Import your Drizzle database instance
-import { products, modules, lessons, ContentType } from "@/lib/db/schema"; // Import your Drizzle schema
-import { eq } from "drizzle-orm"; // Import Drizzle query helpers
-import { getUser } from "@/lib/db/queries";
-import { stripe } from "@/lib/payments/stripe";
-import { nanoid } from "nanoid";
-import { unauthorized } from "next/navigation";
+import { db } from '@/lib/db/drizzle'; // Import your Drizzle database instance
+import { products, modules, lessons, ContentType } from '@/lib/db/schema'; // Import your Drizzle schema
+import { eq } from 'drizzle-orm'; // Import Drizzle query helpers
+import { getUser } from '@/lib/db/queries';
+import { nanoid } from 'nanoid';
+import { unauthorized } from 'next/navigation';
 
 export async function fetchStripeProduct(productId: string) {
   const user = await getUser();
-  if (!user || user.role !== "admin") {
+  if (!user || user.role !== 'admin') {
     unauthorized();
   }
 
   try {
-    const product = await stripe.products.retrieve(productId);
-
-    if (!product.default_price || typeof product.default_price !== "string") {
-      throw new Error("Invalid default price");
+    if (!product.default_price || typeof product.default_price !== 'string') {
+      throw new Error('Invalid default price');
     }
 
     return {
@@ -26,12 +23,12 @@ export async function fetchStripeProduct(productId: string) {
       name: product.name,
       description: product.description || null,
       defaultPriceId: product.default_price,
-      thumbnail: product.images[0] || "",
+      thumbnail: product.images[0] || '',
       active: product.active,
     };
   } catch (error) {
-    console.error("Error fetching Stripe product:", error);
-    throw new Error("Failed to fetch product from Stripe");
+    console.error('Error fetching Stripe product:', error);
+    throw new Error('Failed to fetch product from Stripe');
   }
 }
 
@@ -59,7 +56,7 @@ export async function createCourse(data: {
   modules: ModuleInput[];
 }) {
   const user = await getUser();
-  if (!user || user.role !== "admin") {
+  if (!user || user.role !== 'admin') {
     unauthorized();
   }
 
@@ -74,7 +71,7 @@ export async function createCourse(data: {
       .limit(1);
 
     if (existingProduct.length > 0) {
-      throw new Error("Product already exists in the database");
+      throw new Error('Product already exists in the database');
     }
 
     // Fetch product from Stripe
@@ -82,9 +79,9 @@ export async function createCourse(data: {
 
     if (
       !stripeProduct.default_price ||
-      typeof stripeProduct.default_price !== "string"
+      typeof stripeProduct.default_price !== 'string'
     ) {
-      throw new Error("Invalid default price");
+      throw new Error('Invalid default price');
     }
 
     // Insert product
@@ -93,11 +90,11 @@ export async function createCourse(data: {
       name: stripeProduct.name,
       description: stripeProduct.description || null,
       defaultPriceId: stripeProduct.default_price,
-      thumbnail: stripeProduct.images[0] || "",
+      thumbnail: stripeProduct.images[0] || '',
     });
 
     if (moduleQueryResult[0].affectedRows === 0) {
-      throw new Error("Failed to insert product into the database");
+      throw new Error('Failed to insert product into the database');
     }
 
     // Process each module
@@ -114,7 +111,7 @@ export async function createCourse(data: {
       });
 
       if (moduleQueryResult[0].affectedRows === 0) {
-        throw new Error("Failed to insert module into the database");
+        throw new Error('Failed to insert module into the database');
       }
 
       // Process based on content type
@@ -145,9 +142,9 @@ export async function createCourse(data: {
 
     return { success: true };
   } catch (error) {
-    console.error("Error creating course:", error);
+    console.error('Error creating course:', error);
     throw new Error(
-      error instanceof Error ? error.message : "Failed to create course"
+      error instanceof Error ? error.message : 'Failed to create course'
     );
   }
 }
@@ -159,21 +156,21 @@ async function processBunnyNetCollection(
 ) {
   try {
     if (!process.env.BUNNY_ACCESS_KEY) {
-      throw new Error("BunnyNet access key is not set");
+      throw new Error('BunnyNet access key is not set');
     }
     // Fetch videos from BunnyNet collection
     const videosResponse = await fetch(
       `https://video.bunnycdn.com/library/${libraryId}/videos?page=1&itemsPerPage=100&collection=${collectionId}&orderBy=date`,
       {
         headers: {
-          Accept: "application/json",
+          Accept: 'application/json',
           AccessKey: process.env.BUNNY_ACCESS_KEY,
         },
       }
     );
 
     if (!videosResponse.ok) {
-      throw new Error("Failed to fetch videos from BunnyNet");
+      throw new Error('Failed to fetch videos from BunnyNet');
     }
 
     const videosData = await videosResponse.json();
@@ -182,7 +179,7 @@ async function processBunnyNetCollection(
     for (const [index, video] of videosData.items.entries()) {
       await db.insert(lessons).values({
         moduleId: moduleId,
-        name: video.title.split(".mp4")[0],
+        name: video.title.split('.mp4')[0],
         description: video.description || null,
         contentType: ContentType.VIDEO,
         content: `https://iframe.mediadelivery.net/embed/${video.videoLibraryId}/${video.guid}`,
@@ -191,7 +188,7 @@ async function processBunnyNetCollection(
       });
     }
   } catch (error) {
-    console.error("Error processing BunnyNet collection:", error);
-    throw new Error("Failed to process BunnyNet videos");
+    console.error('Error processing BunnyNet collection:', error);
+    throw new Error('Failed to process BunnyNet videos');
   }
 }

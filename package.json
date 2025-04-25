@@ -9,7 +9,8 @@
     "lint": "next lint",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
-    "db:seed": "npx tsc lib/db/seed.ts"
+    "db:seed": "npx tsc lib/db/seed.ts",
+    "create-webhook": "npx tsc lib/cartpanda/create-webhook.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.0.1",

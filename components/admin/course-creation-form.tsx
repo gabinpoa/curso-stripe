@@ -1,32 +1,31 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
-import { Loader2, Plus, Trash2 } from "lucide-react";
+import { useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import { Loader2, Plus, Trash2 } from 'lucide-react';
 
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import { Switch } from "@/components/ui/switch";
-import { fetchStripeProduct, createCourse } from "@/lib/actions/course-actions";
-import { MDXEditor } from "@/components/mdx-editor";
-import { toast } from "sonner";
-import Image from "next/image";
-import { ContentType } from "@/lib/db/schema";
+} from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
+import { MDXEditor } from '@/components/admin/mdx-editor';
+import { toast } from 'sonner';
+import Image from 'next/image';
+import { ContentType } from '@/lib/db/schema';
 
 const courseFormSchema = z.object({
-  productId: z.string().min(1, "Stripe Product ID is required"),
+  productId: z.string().min(1, 'Stripe Product ID is required'),
   libraryId: z.string().optional(),
 });
 
@@ -77,13 +76,13 @@ export function CourseCreationForm() {
   const [bunnyCollections, setBunnyCollections] = useState<BunnyCollection[]>(
     []
   );
-  const [libraryId, setLibraryId] = useState("");
+  const [libraryId, setLibraryId] = useState('');
 
   const form = useForm<CourseFormValues>({
     resolver: zodResolver(courseFormSchema),
     defaultValues: {
-      productId: "",
-      libraryId: "",
+      productId: '',
+      libraryId: '',
     },
   });
 
@@ -92,20 +91,20 @@ export function CourseCreationForm() {
       setIsLoading(true);
       const product = await fetchStripeProduct(values.productId);
       setStripeProduct(product);
-      setLibraryId(values.libraryId || "");
+      setLibraryId(values.libraryId || '');
 
       if (values.libraryId) {
         const collections = await fetchBunnyCollections(values.libraryId);
         setBunnyCollections(collections);
       }
 
-      toast.success("Product fetched successfully", {
+      toast.success('Product fetched successfully', {
         description: `Found: ${product.name}`,
       });
     } catch (error) {
-      toast.error("Error fetching product", {
+      toast.error('Error fetching product', {
         description:
-          error instanceof Error ? error.message : "Unknown error occurred",
+          error instanceof Error ? error.message : 'Unknown error occurred',
       });
     } finally {
       setIsLoading(false);
@@ -117,12 +116,12 @@ export function CourseCreationForm() {
       const response = await fetch(
         `/api/bunny/collections?libraryId=${libraryId}`
       );
-      if (!response.ok) throw new Error("Failed to fetch collections");
+      if (!response.ok) throw new Error('Failed to fetch collections');
       return await response.json();
     } catch (error) {
-      toast.error("Error fetching collections", {
+      toast.error('Error fetching collections', {
         description:
-          error instanceof Error ? error.message : "Unknown error occurred",
+          error instanceof Error ? error.message : 'Unknown error occurred',
       });
       return [];
     }
@@ -131,8 +130,8 @@ export function CourseCreationForm() {
   const addModule = () => {
     const newModule: Module = {
       id: `temp-${Date.now()}`,
-      name: "",
-      description: "",
+      name: '',
+      description: '',
       order: modules.length + 1,
       isExtraContent: false,
       contentType: ContentType.MDX,
@@ -163,10 +162,10 @@ export function CourseCreationForm() {
     const module_ = updatedModules[moduleIndex];
     const newLesson: Lesson = {
       id: `temp-${Date.now()}`,
-      name: "",
-      description: "",
+      name: '',
+      description: '',
       contentType: ContentType.MDX,
-      content: "",
+      content: '',
       order: module_.lessons.length + 1,
     };
     module_.lessons.push(newLesson);
@@ -198,14 +197,14 @@ export function CourseCreationForm() {
 
   const handleSaveCourse = async () => {
     if (!stripeProduct) {
-      toast.error("Please fetch a product first");
+      toast.error('Please fetch a product first');
       return;
     }
 
     // Validate modules
     for (const courseModule of modules) {
       if (!courseModule.name.trim()) {
-        toast.error("All modules must have a name");
+        toast.error('All modules must have a name');
         return;
       }
 
@@ -213,14 +212,14 @@ export function CourseCreationForm() {
         courseModule.contentType === ContentType.VIDEO &&
         !courseModule.collectionId
       ) {
-        toast.error("All video modules must have a collection selected");
+        toast.error('All video modules must have a collection selected');
         return;
       }
 
       if (courseModule.contentType === ContentType.MDX) {
         for (const lesson of courseModule.lessons) {
           if (!lesson.name.trim() || !lesson.content.trim()) {
-            toast.error("All MDX lessons must have a name and content");
+            toast.error('All MDX lessons must have a name and content');
             return;
           }
         }
@@ -238,7 +237,7 @@ export function CourseCreationForm() {
           order: module.order,
           isExtraContent: module.isExtraContent,
           contentType: module.contentType,
-          collectionId: module.collectionId || "",
+          collectionId: module.collectionId || '',
           lessons: module.lessons.map((lesson) => ({
             name: lesson.name,
             description: lesson.description,
@@ -249,12 +248,12 @@ export function CourseCreationForm() {
         })),
       });
 
-      toast.success("Course created successfully", {
-        description: "Your course has been saved to the database",
+      toast.success('Course created successfully', {
+        description: 'Your course has been saved to the database',
       });
     } catch (error) {
       toast.error(
-        error instanceof Error ? error.message : "Unknown error occurred"
+        error instanceof Error ? error.message : 'Unknown error occurred'
       );
     } finally {
       setIsSaving(false);
@@ -278,7 +277,7 @@ export function CourseCreationForm() {
                 <Input
                   id="productId"
                   placeholder="prod_..."
-                  {...form.register("productId")}
+                  {...form.register('productId')}
                 />
                 {form.formState.errors.productId && (
                   <p className="text-sm text-red-500">
@@ -293,7 +292,7 @@ export function CourseCreationForm() {
                 <Input
                   id="libraryId"
                   placeholder="12345"
-                  {...form.register("libraryId")}
+                  {...form.register('libraryId')}
                 />
               </div>
             </div>
@@ -316,7 +315,7 @@ export function CourseCreationForm() {
                 <div className="aspect-video relative rounded-lg overflow-hidden">
                   {stripeProduct.thumbnail ? (
                     <Image
-                      src={stripeProduct.thumbnail || "/placeholder.svg"}
+                      src={stripeProduct.thumbnail || '/placeholder.svg'}
                       alt={stripeProduct.name}
                       width={600}
                       height={300}
@@ -334,7 +333,7 @@ export function CourseCreationForm() {
                       {stripeProduct.name}
                     </h3>
                     <p className="text-sm text-muted-foreground">
-                      {stripeProduct.description || "No description"}
+                      {stripeProduct.description || 'No description'}
                     </p>
                   </div>
                   <div className="grid grid-cols-2 gap-4">
@@ -353,7 +352,7 @@ export function CourseCreationForm() {
                     <div>
                       <p className="text-sm font-medium">Status</p>
                       <p className="text-sm text-muted-foreground">
-                        {stripeProduct.active ? "Active" : "Inactive"}
+                        {stripeProduct.active ? 'Active' : 'Inactive'}
                       </p>
                     </div>
                   </div>
@@ -489,7 +488,7 @@ export function CourseCreationForm() {
                                   key={collection.guid}
                                   value={collection.guid}
                                 >
-                                  {collection.name} ({collection.videoCount}{" "}
+                                  {collection.name} ({collection.videoCount}{' '}
                                   videos)
                                 </SelectItem>
                               ))}

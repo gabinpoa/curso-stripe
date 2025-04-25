@@ -1,8 +1,8 @@
-import { and, desc, eq, isNull, sql } from "drizzle-orm";
-import { db } from "./drizzle";
-import { BuyRecord, buyRecords, products, users } from "./schema";
-import { cookies } from "next/headers";
-import { verifyToken } from "../auth/token";
+import { and, desc, eq, sql } from 'drizzle-orm';
+import { db } from './drizzle';
+import { Order, orders, products, users } from './schema';
+import { cookies } from 'next/headers';
+import { verifyToken } from '../auth/token';
 
 export async function getUser() {
   const sessionData = await getVerifiedSession();
@@ -12,12 +12,7 @@ export async function getUser() {
   const user = await db
     .select()
     .from(users)
-    .where(
-      and(
-        eq(users.customerId, sessionData.user.customerId),
-        isNull(users.deletedAt)
-      )
-    )
+    .where(and(eq(users.customerId, sessionData.user.customerId)))
     .limit(1);
 
   if (user.length === 0) {
@@ -28,7 +23,7 @@ export async function getUser() {
 }
 
 export async function getVerifiedSession() {
-  const sessionCookie = (await cookies()).get("session");
+  const sessionCookie = (await cookies()).get('session');
   if (!sessionCookie || !sessionCookie.value) {
     return null;
   }
@@ -37,7 +32,7 @@ export async function getVerifiedSession() {
   if (
     !sessionData ||
     !sessionData.user ||
-    typeof sessionData.user.customerId !== "string"
+    typeof sessionData.user.customerId !== 'string'
   ) {
     return null;
   }
@@ -52,7 +47,7 @@ export async function getVerifiedSession() {
 export type Lesson = {
   name: string;
   order: number;
-  contentType: "MDX" | "VIDEO" | "DOCUMENT";
+  contentType: 'MDX' | 'VIDEO' | 'DOCUMENT';
   content: string;
   mdxComponent?: React.ReactNode | null;
 };
@@ -149,8 +144,8 @@ export async function getCourseWithNonExtraModulesContent(
     module_.lessons = module_.lessons.map((lesson) => {
       return {
         ...lesson,
-        content: "# Esse conteúdo fica disponível 7 dias após a compra",
-        contentType: "MDX",
+        content: '# Esse conteúdo fica disponível 7 dias após a compra',
+        contentType: 'MDX',
       };
     });
     return module_;
@@ -183,14 +178,13 @@ export async function getCustomerBoughtProductsModules() {
   if (!session) {
     return undefined;
   }
-  const userBoughtRecords = await db.query.buyRecords.findMany({
+  const userBoughtRecords = await db.query.orders.findMany({
     columns: {},
     with: {
       product: {
         columns: {
           id: true,
           name: true,
-          defaultPriceId: true,
           thumbnail: true,
           description: true,
         },
@@ -207,9 +201,9 @@ export async function getCustomerBoughtProductsModules() {
       },
     },
     where: and(
-      eq(buyRecords.customerId, session.user.customerId),
-      eq(buyRecords.status, "paid"),
-      eq(buyRecords.refunded, false)
+      eq(orders.customerId, session.user.customerId),
+      eq(orders.status, 'paid'),
+      eq(orders.refunded, false)
     ),
   });
   return userBoughtRecords.map((record) => record.product);
@@ -242,34 +236,31 @@ async function getBuyRecordByCustomerIdAndProductId(
 ) {
   const result = await db
     .select()
-    .from(buyRecords)
+    .from(orders)
     .where(
-      and(
-        eq(buyRecords.customerId, customerId),
-        eq(buyRecords.productId, productId)
-      )
+      and(eq(orders.customerId, customerId), eq(orders.productId, productId))
     )
-    .orderBy(desc(buyRecords.createdAt))
+    .orderBy(desc(orders.createdAt))
     .limit(1);
   return result.length > 0 ? result[0] : null;
 }
 
-function hasNotRefundedPastSevenDays(teamProductBought: BuyRecord) {
+function hasNotRefundedPastSevenDays(teamProductBought: Order) {
   return (
     !boughtInTheLastSevenDays(teamProductBought) &&
-    teamProductBought.status === "paid" &&
+    teamProductBought.status === 'paid' &&
     teamProductBought.refunded === false
   );
 }
 
-function boughtInTheLastSevenDays(buyRecord: BuyRecord) {
+function boughtInTheLastSevenDays(buyRecord: Order) {
   const now = new Date();
   const sevenDaysAgo = new Date(now);
   sevenDaysAgo.setDate(now.getDate() - 7);
   return buyRecord.createdAt > sevenDaysAgo;
 }
 
-export type UserAccessToCourseStatus = "allow_full" | "allow_partial" | "deny";
+export type UserAccessToCourseStatus = 'allow_full' | 'allow_partial' | 'deny';
 async function getUserAccessToCourseStatus(
   customerId: string,
   productId: string
@@ -280,16 +271,16 @@ async function getUserAccessToCourseStatus(
   );
 
   if (!productBought) {
-    return "deny";
+    return 'deny';
   } else if (hasNotRefundedPastSevenDays(productBought)) {
-    return "allow_full";
+    return 'allow_full';
   } else if (
-    productBought.status === "paid" &&
+    productBought.status === 'paid' &&
     productBought.refunded === false
   ) {
-    return "allow_partial";
+    return 'allow_partial';
   } else {
-    return "deny";
+    return 'deny';
   }
 }
 
@@ -300,9 +291,9 @@ export async function getCourse(productId: string) {
   }
   const customerId = session.user.customerId;
   const userAccess = await getUserAccessToCourseStatus(customerId, productId);
-  if (userAccess === "deny") {
+  if (userAccess === 'deny') {
     return null;
-  } else if (userAccess === "allow_partial") {
+  } else if (userAccess === 'allow_partial') {
     return await getCourseWithNonExtraModulesContent(productId);
   } else {
     return await getCourseWithFullModules(productId);

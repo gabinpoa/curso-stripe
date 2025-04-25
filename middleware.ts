@@ -1,19 +1,12 @@
-import { NextResponse } from "next/server";
-import type { NextRequest } from "next/server";
-import { signToken, verifyToken } from "./lib/auth/token";
-
-const protectedRoutes = ["/cursos", "/meus-cursos", "/admin"];
-const exceptionRoute = "/visao-geral";
+import { NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
+import { signToken, verifyToken } from './lib/auth/token';
 
 export async function middleware(request: NextRequest) {
-  const { pathname } = request.nextUrl;
-  const sessionCookie = request.cookies.get("session");
-  const isProtectedRoute = protectedRoutes.some(
-    (route) => pathname.startsWith(route) && !pathname.endsWith(exceptionRoute)
-  );
+  const sessionCookie = request.cookies.get('session');
 
-  if (isProtectedRoute && !sessionCookie) {
-    return NextResponse.redirect(new URL("/sign-in", request.url));
+  if (!sessionCookie) {
+    return NextResponse.redirect(new URL('/sign-in', request.url));
   }
 
   const res = NextResponse.next();
@@ -24,22 +17,20 @@ export async function middleware(request: NextRequest) {
       const expiresInOneDay = new Date(Date.now() + 24 * 60 * 60 * 1000);
 
       res.cookies.set({
-        name: "session",
+        name: 'session',
         value: await signToken({
           ...parsed,
           expires: expiresInOneDay.toISOString(),
         }),
         httpOnly: true,
         secure: true,
-        sameSite: "lax",
+        sameSite: 'lax',
         expires: expiresInOneDay,
       });
     } catch (error) {
-      console.error("Error updating session:", error);
-      res.cookies.delete("session");
-      if (isProtectedRoute) {
-        return NextResponse.redirect(new URL("/sign-in", request.url));
-      }
+      console.error('Error updating session:', error);
+      res.cookies.delete('session');
+      return NextResponse.redirect(new URL('/sign-in', request.url));
     }
   }
 
@@ -47,5 +38,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!api|_next/static|_next/image|favicon.ico).*)"],
+  matcher: ['/((?!api|_next/static|_next/image|favicon.ico).*)'],
 };

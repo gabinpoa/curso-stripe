@@ -1,104 +1,101 @@
-import { relations } from "drizzle-orm";
+import { relations } from 'drizzle-orm';
 import {
   mysqlTable,
-  serial,
   varchar,
   text,
   timestamp,
   int,
   mysqlEnum,
   boolean,
-} from "drizzle-orm/mysql-core";
+} from 'drizzle-orm/mysql-core';
 
-export const products = mysqlTable("products", {
-  id: varchar("id", { length: 255 }).primaryKey(),
-  name: varchar("name", { length: 100 }).notNull(),
-  defaultPriceId: varchar("default_price_id", { length: 255 }).notNull(),
-  thumbnail: varchar("thumbnail", { length: 255 }).notNull(),
-  description: text("description"),
-  duration: varchar("duration", { length: 50 }),
-  level: varchar("level", { length: 50 }),
-  instructor: varchar("instructor", { length: 100 }),
-  checkoutUrl: varchar("checkout_url", { length: 255 }),
+export const products = mysqlTable('products', {
+  id: varchar('id', { length: 255 }).primaryKey(),
+  name: varchar('name', { length: 100 }).notNull(),
+  thumbnail: varchar('thumbnail', { length: 255 }).notNull(),
+  description: text('description'),
+  status: mysqlEnum('status', ['active', 'inactive'])
+    .notNull()
+    .default('active'),
+  images: text('images'),
 });
 
-export const users = mysqlTable("users", {
-  customerId: varchar("customer_id", { length: 255 }).primaryKey(),
-  name: varchar("name", { length: 100 }),
-  email: varchar("email", { length: 255 }).notNull().unique(),
-  passwordHash: varchar("password_hash", { length: 255 }).notNull(),
-  role: varchar("role", { length: 20 }).notNull().default("member"),
-  createdAt: timestamp("created_at").notNull().defaultNow(),
-  updatedAt: timestamp("updated_at").notNull().defaultNow(),
-  deletedAt: timestamp("deleted_at"),
+export const users = mysqlTable('users', {
+  customerId: varchar('customer_id', { length: 255 }).primaryKey(),
+  name: varchar('name', { length: 100 }),
+  email: varchar('email', { length: 255 }).notNull().unique(),
+  passwordHash: varchar('password_hash', { length: 255 }).notNull(),
+  role: varchar('role', { length: 20 }).notNull().default('member'),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow(),
 });
 
-export const buyRecords = mysqlTable("buy_record", {
-  id: serial("id").primaryKey(),
-  customerId: varchar("customer_id", { length: 255 })
+export const orders = mysqlTable('orders', {
+  id: varchar('id', { length: 20 }).primaryKey(),
+  customerId: varchar('customer_id', { length: 255 })
     .notNull()
-    .references(() => users.customerId), // references to customer in stripe
-  productId: varchar("product_id", { length: 255 })
+    .references(() => users.customerId),
+  productId: varchar('product_id', { length: 255 })
     .notNull()
-    .references(() => products.id), // references to product in stripe
-  createdAt: timestamp("created_at").notNull().defaultNow(),
-  updatedAt: timestamp("updated_at").notNull().defaultNow(),
-  paymentIntentId: varchar("payment_intent_id", { length: 255 }),
-  status: mysqlEnum("status", [
-    "paid",
-    "unpaid",
-    "no_payment_required",
+    .references(() => products.id),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+  orderToken: varchar('order_token', { length: 255 }),
+  status: mysqlEnum('status', [
+    'paid',
+    'unpaid',
+    'no_payment_required',
   ]).notNull(),
-  refunded: boolean("refunded").notNull().default(false),
+  refunded: boolean('refunded').notNull().default(false),
 });
 
-export const modules = mysqlTable("modules", {
-  id: varchar("id", { length: 255 }).primaryKey(),
-  productId: varchar("product_id", { length: 255 }).notNull(), // references to product in stripe
-  name: varchar("name", { length: 100 }).notNull(),
-  description: text("description"),
-  order: int("order").notNull(),
-  isExtraContent: boolean("is_extra_content").notNull().default(false),
-  level: varchar("level", { length: 50 }),
+export const modules = mysqlTable('modules', {
+  id: varchar('id', { length: 255 }).primaryKey(),
+  productId: varchar('product_id', { length: 255 }).notNull(),
+  name: varchar('name', { length: 100 }).notNull(),
+  description: text('description'),
+  order: int('order').notNull(),
+  isExtraContent: boolean('is_extra_content').notNull().default(false),
+  level: varchar('level', { length: 50 }),
 });
 
-export const lessons = mysqlTable("lessons", {
-  id: varchar("id", { length: 255 }).primaryKey(),
-  moduleId: varchar("module_id", { length: 255 })
+export const lessons = mysqlTable('lessons', {
+  id: varchar('id', { length: 255 }).primaryKey(),
+  moduleId: varchar('module_id', { length: 255 })
     .notNull()
     .references(() => modules.id),
-  name: varchar("name", { length: 100 }).notNull(),
-  description: text("description"),
-  contentType: mysqlEnum("content_types", [
-    "MDX",
-    "VIDEO",
-    "DOCUMENT",
+  name: varchar('name', { length: 100 }).notNull(),
+  description: text('description'),
+  contentType: mysqlEnum('content_types', [
+    'MDX',
+    'VIDEO',
+    'DOCUMENT',
   ]).notNull(),
-  content: text("content").notNull(),
-  order: int("order").notNull(),
+  content: text('content').notNull(),
+  order: int('order').notNull(),
 });
 
 export const productsRelations = relations(products, ({ many }) => {
   return {
-    buyRecord: many(buyRecords),
+    buyRecord: many(orders),
     modules: many(modules),
   };
 });
 
 export const usersRelations = relations(users, ({ many }) => {
   return {
-    buyRecord: many(buyRecords),
+    buyRecord: many(orders),
   };
 });
 
-export const buyRecordRelations = relations(buyRecords, ({ one }) => {
+export const buyRecordRelations = relations(orders, ({ one }) => {
   return {
     user: one(users, {
-      fields: [buyRecords.customerId],
+      fields: [orders.customerId],
       references: [users.customerId],
     }),
     product: one(products, {
-      fields: [buyRecords.productId],
+      fields: [orders.productId],
       references: [products.id],
     }),
   };
@@ -123,15 +120,15 @@ export type Product = typeof products.$inferSelect;
 export type NewProduct = typeof products.$inferInsert;
 export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;
-export type BuyRecord = typeof buyRecords.$inferSelect;
-export type NewBuyRecord = typeof buyRecords.$inferInsert;
+export type Order = typeof orders.$inferSelect;
+export type NewOrder = typeof orders.$inferInsert;
 export type Module = typeof modules.$inferSelect;
 export type NewModule = typeof modules.$inferInsert;
 export type ModuleLesson = typeof lessons.$inferSelect;
 export type NewModuleLesson = typeof lessons.$inferInsert;
 
 export enum ContentType {
-  MDX = "MDX",
-  VIDEO = "VIDEO",
-  DOCUMENT = "DOCUMENT",
+  MDX = 'MDX',
+  VIDEO = 'VIDEO',
+  DOCUMENT = 'DOCUMENT',
 }
