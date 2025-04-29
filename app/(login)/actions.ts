@@ -20,6 +20,11 @@ export const signIn = validatedAction(signInSchema, async (data) => {
 
   const foundUser = await db.query.users.findFirst({
     where: eq(users.email, email),
+    columns: {
+      customerId: true,
+      passwordHash: true,
+      email: true,
+    },
   });
 
   if (!foundUser) {
@@ -43,7 +48,7 @@ export const signIn = validatedAction(signInSchema, async (data) => {
     };
   }
 
-  await setSession(foundUser);
+  await setSession(foundUser.customerId);
 
   redirect("/");
 });
@@ -64,7 +69,7 @@ export const signUp = validatedAction(signUpSchema, async (data) => {
     return newUser;
   }
 
-  await setSession(newUser);
+  await setSession(newUser.customerId);
 
   redirect("/");
 });

@@ -1,6 +1,5 @@
 import { compare, hash } from "bcryptjs";
 import { cookies } from "next/headers";
-import { NewUser } from "@/lib/db/schema";
 import { signToken, verifyToken } from "./token";
 
 const SALT_ROUNDS = 10;
@@ -27,10 +26,10 @@ export async function getSession() {
   return await verifyToken(session);
 }
 
-export async function setSession(user: NewUser) {
+export async function setSession(customerId: string) {
   const expiresInOneDay = new Date(Date.now() + 24 * 60 * 60 * 1000);
   const session: SessionData = {
-    user: { customerId: user.customerId },
+    user: { customerId },
     expires: expiresInOneDay.toISOString(),
   };
   const encryptedSession = await signToken(session);
