@@ -7,7 +7,8 @@ import {
   OrderRefundedWebhook,
 } from '@/lib/cartpanda/webhook-types';
 import { db } from '@/lib/db/drizzle';
-import { createUser, generateRandomPassword } from '@/lib/auth/create-user';
+import { createUser } from '@/lib/auth/create-user';
+import { sendMagicLink } from '@/lib/auth/send-magic-link';
 
 export default async function handler(
   req: NextApiRequest,
@@ -35,9 +36,6 @@ export default async function handler(
   if (!customerInDb) {
     await createUser(
       order.customer.email,
-      generateRandomPassword(12),
-      order.customer.first_name,
-      order.customer.last_name
     );
   }
 
@@ -67,6 +65,12 @@ export default async function handler(
                 updatedAt: new Date(paidOrder.updated_at),
               },
             });
+
+          await sendMagicLink(
+            email, customerId, {
+            courseName: lineItem.title || lineItem.name,
+            courseId: lineItem.product_id.toString()
+          })
         }
         break;
       }
@@ -95,7 +99,7 @@ export default async function handler(
               })
               .where(
                 eq(orders.id, refundedOrder.id.toString()) &&
-                  eq(orders.productId, lineItem.product_id.toString())
+                eq(orders.productId, lineItem.product_id.toString())
               );
           }
         }

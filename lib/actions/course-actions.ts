@@ -6,31 +6,8 @@ import { eq } from 'drizzle-orm'; // Import Drizzle query helpers
 import { getUser } from '@/lib/db/queries';
 import { nanoid } from 'nanoid';
 import { unauthorized } from 'next/navigation';
+import { cartpanda } from '../cartpanda/instance';
 
-export async function fetchStripeProduct(productId: string) {
-  const user = await getUser();
-  if (!user || user.role !== 'admin') {
-    unauthorized();
-  }
-
-  try {
-    if (!product.default_price || typeof product.default_price !== 'string') {
-      throw new Error('Invalid default price');
-    }
-
-    return {
-      id: product.id,
-      name: product.name,
-      description: product.description || null,
-      defaultPriceId: product.default_price,
-      thumbnail: product.images[0] || '',
-      active: product.active,
-    };
-  } catch (error) {
-    console.error('Error fetching Stripe product:', error);
-    throw new Error('Failed to fetch product from Stripe');
-  }
-}
 
 type ModuleInput = {
   name: string;
@@ -63,7 +40,7 @@ export async function createCourse(data: {
   const { productId, libraryId, modules: modulesData } = data;
 
   try {
-    // Check if product already exists
+    // Check if product already exists in the database
     const existingProduct = await db
       .select()
       .from(products)
@@ -74,23 +51,15 @@ export async function createCourse(data: {
       throw new Error('Product already exists in the database');
     }
 
-    // Fetch product from Stripe
-    const stripeProduct = await stripe.products.retrieve(productId);
-
-    if (
-      !stripeProduct.default_price ||
-      typeof stripeProduct.default_price !== 'string'
-    ) {
-      throw new Error('Invalid default price');
-    }
+    // Fetch product from CartPanda
+    const cartPandaProduct = await cartpanda.getProduct(productId);
 
     // Insert product
     const moduleQueryResult = await db.insert(products).values({
       id: productId,
-      name: stripeProduct.name,
-      description: stripeProduct.description || null,
-      defaultPriceId: stripeProduct.default_price,
-      thumbnail: stripeProduct.images[0] || '',
+      name: cartPandaProduct.title,
+      thumbnail: cartPandaProduct.images[0].src,
+      images: JSON.stringify(cartPandaProduct.images),
     });
 
     if (moduleQueryResult[0].affectedRows === 0) {

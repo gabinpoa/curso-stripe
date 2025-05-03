@@ -29,7 +29,15 @@ export const signIn = validatedAction(signInSchema, async (data) => {
 
   if (!foundUser) {
     return {
-      error: "Invalid email or password. Please try again.",
+      error: "E-mail ou senha inválidos. Por favor, tente novamente.",
+      email,
+      password,
+    };
+  }
+
+  if (!foundUser.passwordHash) {
+    return {
+      error: "E-mail ou senha inválidos. Por favor, tente novamente.",
       email,
       password,
     };
@@ -56,14 +64,12 @@ export const signIn = validatedAction(signInSchema, async (data) => {
 const signUpSchema = z.object({
   email: z.string().email(),
   password: z.string().min(8),
-  firstName: z.string().min(1).max(100),
-  lastName: z.string().min(1).max(100),
 });
 
 export const signUp = validatedAction(signUpSchema, async (data) => {
-  const { email, password, firstName, lastName } = data;
+  const { email } = data;
 
-  const newUser = await createUser(email, password, firstName, lastName);
+  const newUser = await createUser(email);
 
   if ("error" in newUser) {
     return newUser;

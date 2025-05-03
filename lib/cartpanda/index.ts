@@ -183,7 +183,18 @@ export type Customer = {
   };
 };
 
-type Product = {
+export type Image = {
+  id: number;
+  product_id: number;
+  position: number;
+  alt: string;
+  src: string;
+  created_at: string;
+  updated_at: string;
+  url: string;
+};
+
+export type Product = {
   id: number;
   title: string;
   body_html: string;
@@ -234,16 +245,7 @@ type Product = {
     updated_at: string;
     deleted_at: string | null;
   }[];
-  images: {
-    id: number;
-    product_id: number;
-    position: number;
-    alt: string;
-    src: string;
-    created_at: string;
-    updated_at: string;
-    url: string;
-  }[];
+  images: Image[];
   product_default_variant: {
     id: number;
     product_id: number;

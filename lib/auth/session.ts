@@ -15,7 +15,7 @@ export async function comparePasswords(
   return compare(plainTextPassword, hashedPassword);
 }
 
-type SessionData = {
+export type SessionData = {
   user: { customerId: string };
   expires: string;
 };
@@ -27,16 +27,26 @@ export async function getSession() {
 }
 
 export async function setSession(customerId: string) {
-  const expiresInOneDay = new Date(Date.now() + 24 * 60 * 60 * 1000);
-  const session: SessionData = {
-    user: { customerId },
-    expires: expiresInOneDay.toISOString(),
-  };
-  const encryptedSession = await signToken(session);
+  const { encryptedSession, expiresInOneMonth } = await createEncryptedSession(customerId);
+  await setASession(encryptedSession, expiresInOneMonth);
+}
+
+export async function setASession(encryptedSession: string, expiresIn: Date) {
   (await cookies()).set("session", encryptedSession, {
-    expires: expiresInOneDay,
+    expires: expiresIn,
     httpOnly: true,
     secure: true,
     sameSite: "lax",
   });
 }
+
+export async function createEncryptedSession(customerId: string) {
+  const expiresInOneMonth = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+  const session: SessionData = {
+    user: { customerId },
+    expires: expiresInOneMonth.toISOString(),
+  };
+  const encryptedSession = await signToken(session);
+  return { encryptedSession, expiresInOneMonth };
+}
+

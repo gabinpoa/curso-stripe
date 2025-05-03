@@ -18,12 +18,19 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    if (!process.env.BUNNY_ACCESS_KEY) {
+      return NextResponse.json(
+        { error: "Access Key required" },
+        { status: 500 }
+      );
+    }
+
     const response = await fetch(
       `https://video.bunnycdn.com/library/${libraryId}/collections`,
       {
         headers: {
           Accept: "application/json",
-          AccessKey: process.env.BUNNY_ACCESS_KEY!,
+          AccessKey: process.env.BUNNY_ACCESS_KEY,
         },
       }
     );
