@@ -1,30 +1,45 @@
-import { NextApiRequest, NextApiResponse } from 'next';
 import { orders, users } from '@/lib/db/schema'; // Import your orders schema
-import { eq, or } from 'drizzle-orm';
+import { and, eq, or } from 'drizzle-orm';
 import {
-  OrderCreatedWebhook,
   OrderPaidWebhook,
   OrderRefundedWebhook,
 } from '@/lib/cartpanda/webhook-types';
 import { db } from '@/lib/db/drizzle';
 import { createUser } from '@/lib/auth/create-user';
 import { sendMagicLink } from '@/lib/auth/send-magic-link';
+import { cartpanda } from '@/lib/cartpanda/instance';
+import { Order } from '@/lib/cartpanda';
+import { NextRequest } from 'next/server';
 
-export default async function handler(
-  req: NextApiRequest,
-  res: NextApiResponse
+export async function POST(
+  req: NextRequest,
 ) {
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
-  }
+  const body = await req.json() as OrderPaidWebhook | OrderRefundedWebhook;
+  const { event, order: eventOrder } = body;
+  // orderEvent can't always be trusted, so we need to get the order from cartpanda
+  // to ensure we have the correct order data.
 
-  const { event, order } = req.body as
-    | OrderPaidWebhook
-    | OrderRefundedWebhook
-    | OrderCreatedWebhook;
+  const { order } = await cartpanda.getOrder(eventOrder.id.toString());
 
-  const customerId = order.customer_id.toString();
+  const orderId = order.id.toString();
+  const orderToken = order.token;
+  const customerId = order.customer_id.toString() || order.customer.id.toString();
   const email = order.customer.email;
+  const orderCreatedAt = new Date(order.created_at);
+  const orderUpdatedAt = new Date(order.updated_at);
+
+  const everyLineItemFromEventIsInOrder = eventOrder.line_items.every((item) => order.line_items.findIndex((i) => i.product_id === item.product_id) !== -1);
+  const everyLineItemFromOrderIsInEvent = order.line_items.every((item) => eventOrder.line_items.findIndex((i) => i.product_id === item.product_id) !== -1);
+
+  let lineItems: Order['line_items'] | OrderRefundedWebhook['order']['line_items'] | OrderPaidWebhook['order']['line_items'] = eventOrder.line_items;
+
+  if (!everyLineItemFromEventIsInOrder) {
+    console.log('Item from event line items not found in order line items', event);
+    // In this case the event order cannot be trusted, so we need to get the order from cartpanda
+    lineItems = order.line_items;
+  } else if (!everyLineItemFromOrderIsInEvent) {
+    console.log('Item from order line items not found in event line items', event);
+  }
 
   const customerInDb = await db.query.users.findFirst({
     columns: {
@@ -35,34 +50,37 @@ export default async function handler(
 
   if (!customerInDb) {
     await createUser(
-      order.customer.email,
+      eventOrder.customer.email,
     );
   }
 
   try {
     switch (event) {
       case 'order.paid': {
-        const paidOrder = order as OrderPaidWebhook['order']; // Type assertion for order.paid
         // Handle order.paid webhook for every line item
-        const lineItems = paidOrder.line_items;
+        if (order.status_id === 'Refunded') {
+          console.log('Refunded order received in paid event');
+          return new Response(JSON.stringify({ error: 'Order has been refunded' }), { status: 400 });
+        }
+
         for (const lineItem of lineItems) {
           await db
             .insert(orders)
             .values({
-              id: paidOrder.id.toString(),
+              id: orderId,
               customerId: customerId,
               productId: lineItem.product_id.toString(),
-              orderToken: paidOrder.token,
+              orderToken: orderToken,
               status: 'paid',
               refunded: false,
-              createdAt: new Date(paidOrder.created_at),
-              updatedAt: new Date(paidOrder.updated_at),
+              createdAt: orderCreatedAt,
+              updatedAt: orderUpdatedAt,
             })
             .onDuplicateKeyUpdate({
               set: {
                 status: 'paid',
                 refunded: false,
-                updatedAt: new Date(paidOrder.updated_at),
+                updatedAt: orderUpdatedAt,
               },
             });
 
@@ -75,44 +93,40 @@ export default async function handler(
         break;
       }
       case 'order.refunded': {
-        const refundedOrder = order as OrderRefundedWebhook['order']; // Type assertion for order.refunded
-        // Handle order.refunded webhook for every line item
-        const lineItems = refundedOrder.line_items;
         if (lineItems.length === 0) {
           await db
             .update(orders)
             .set({
               refunded: true,
-              updatedAt: new Date(refundedOrder.updated_at),
+              updatedAt: orderUpdatedAt,
             })
-            .where(eq(orders.id, refundedOrder.id.toString()));
+            .where(eq(orders.id, orderId));
         } else {
           for (const lineItem of lineItems) {
-            const status = parseInt(refundedOrder.status_id, 10);
-            const isRefunded = status === 5 || status === 6; // Refunded or Partially Refunded
+            const productId = lineItem.product_id.toString();
 
             await db
               .update(orders)
               .set({
-                refunded: isRefunded,
-                updatedAt: new Date(refundedOrder.updated_at),
+                refunded: true,
+                updatedAt: orderUpdatedAt,
               })
-              .where(
-                eq(orders.id, refundedOrder.id.toString()) &&
-                eq(orders.productId, lineItem.product_id.toString())
-              );
+              .where(and(
+                eq(orders.id, orderId),
+                eq(orders.productId, productId)
+              ));
           }
         }
         break;
       }
       default: {
-        return res.status(400).json({ error: 'Unsupported event type' });
+        return new Response(JSON.stringify({ error: 'Unsupported event type' }), { status: 400 });
       }
     }
 
-    return res.status(200).json({ success: true });
+    return new Response(JSON.stringify({ success: true }), { status: 200 });
   } catch (error) {
     console.error('Error handling webhook:', error);
-    return res.status(500).json({ error: 'Internal server error' });
+    return new Response(JSON.stringify({ error: 'Internal server error' }), { status: 500 });
   }
 }

@@ -38,12 +38,12 @@ export async function sendMagicLink(email: string, customerId: string, options: 
         html
     };
 
-    // Send the email
-    transporter.sendMail(mailOptions, function (error, info) {
-        if (error) {
-            console.log('Error:', error);
-        } else {
-            console.log('Email sent:', info.response);
-        }
-    });
+    // Send the email using Promises
+    try {
+        const info = await transporter.sendMail(mailOptions);
+        console.log('Email sent:', info.response);
+    } catch (error) {
+        console.error('Error sending email:', error);
+        throw error;
+    }
 }

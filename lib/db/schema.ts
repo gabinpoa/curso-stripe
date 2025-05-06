@@ -7,6 +7,7 @@ import {
   int,
   mysqlEnum,
   boolean,
+  primaryKey,
 } from 'drizzle-orm/mysql-core';
 
 export const products = mysqlTable('products', {
@@ -31,7 +32,7 @@ export const users = mysqlTable('users', {
 });
 
 export const orders = mysqlTable('orders', {
-  id: varchar('id', { length: 20 }).primaryKey(),
+  id: varchar('id', { length: 20 }),
   customerId: varchar('customer_id', { length: 255 })
     .notNull()
     .references(() => users.customerId),
@@ -47,7 +48,9 @@ export const orders = mysqlTable('orders', {
     'no_payment_required',
   ]).notNull(),
   refunded: boolean('refunded').notNull().default(false),
-});
+}, (table) => [
+  primaryKey({ columns: [table.id, table.productId] })
+]);
 
 export const modules = mysqlTable('modules', {
   id: varchar('id', { length: 255 }).primaryKey(),

@@ -9,11 +9,17 @@ CREATE TABLE `orders` (
 	`refunded` boolean NOT NULL DEFAULT false,
 	CONSTRAINT `orders_id` PRIMARY KEY(`id`)
 );
---> statement-breakpoint
-DROP TABLE `buy_record`;--> statement-breakpoint
-ALTER TABLE `products` ADD `status` enum('active','inactive') DEFAULT 'active' NOT NULL;--> statement-breakpoint
-ALTER TABLE `products` ADD `price` int NOT NULL;--> statement-breakpoint
-ALTER TABLE `products` ADD `images` text;--> statement-breakpoint
-ALTER TABLE `orders` ADD CONSTRAINT `orders_customer_id_users_customer_id_fk` FOREIGN KEY (`customer_id`) REFERENCES `users`(`customer_id`) ON DELETE no action ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE `orders` ADD CONSTRAINT `orders_product_id_products_id_fk` FOREIGN KEY (`product_id`) REFERENCES `products`(`id`) ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+
+DROP TABLE `buy_record`;
+
+ALTER TABLE `products` ADD `status` enum('active','inactive') DEFAULT 'active' NOT NULL;
+
+ALTER TABLE `products` ADD `price` int NOT NULL;
+
+ALTER TABLE `products` ADD `images` text;
+
+ALTER TABLE `orders` ADD CONSTRAINT `orders_customer_id_users_customer_id_fk` FOREIGN KEY (`customer_id`) REFERENCES `users`(`customer_id`) ON DELETE no action ON UPDATE no action;
+
+ALTER TABLE `orders` ADD CONSTRAINT `orders_product_id_products_id_fk` FOREIGN KEY (`product_id`) REFERENCES `products`(`id`) ON DELETE no action ON UPDATE no action;
+
 ALTER TABLE `products` DROP COLUMN `default_price_id`;
