@@ -19,12 +19,29 @@ export async function POST(
   // orderEvent can't always be trusted, so we need to get the order from cartpanda
   // to ensure we have the correct order data.
 
-  const { order } = await cartpanda.getOrder(eventOrder.id.toString());
+  if (!eventOrder) {
+    return new Response(JSON.stringify({ error: 'Invalid payload: order is required' }), { status: 400 });
+  }
+
+  let order;
+  try {
+    const orderResponse = await cartpanda.getOrder(eventOrder.id.toString());
+    order = orderResponse.order;
+  } catch (error) {
+    console.error('Error fetching order from CartPanda:', error);
+    return new Response(JSON.stringify({ error: 'Internal server error' }), { status: 500 });
+  }
 
   const orderId = order.id.toString();
   const orderToken = order.token;
   const customerId = order.customer_id.toString() || order.customer.id.toString();
+  if (!customerId) {
+    return new Response(JSON.stringify({ error: 'No customer ID found' }), { status: 400 });
+  }
   const email = order.customer.email;
+  if (!email) {
+    return new Response(JSON.stringify({ error: 'No email found' }), { status: 400 });
+  }
   const orderCreatedAt = new Date(order.created_at);
   const orderUpdatedAt = new Date(order.updated_at);
 
@@ -41,17 +58,22 @@ export async function POST(
     console.log('Item from order line items not found in event line items', event);
   }
 
-  const customerInDb = await db.query.users.findFirst({
-    columns: {
-      customerId: true,
-    },
-    where: or(eq(users.customerId, customerId), eq(users.email, email)),
-  });
+  try {
+    const customerInDb = await db.query.users.findFirst({
+      columns: {
+        customerId: true,
+      },
+      where: or(eq(users.customerId, customerId), eq(users.email, email)),
+    });
 
-  if (!customerInDb) {
-    await createUser(
-      eventOrder.customer.email,
-    );
+    if (!customerInDb) {
+      await createUser(
+        eventOrder.customer.email,
+      );
+    }
+  } catch (error) {
+    console.error('Error creating user:', error);
+    return new Response(JSON.stringify({ error: 'Internal server error' }), { status: 500 });
   }
 
   try {
