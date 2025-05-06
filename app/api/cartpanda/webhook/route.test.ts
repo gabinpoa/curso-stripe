@@ -1,6 +1,6 @@
 import { POST } from './route';
 import { db } from '@/lib/db/drizzle';
-import { products, modules, lessons, users } from '@/lib/db/schema';
+import { products, modules, lessons, users, orders } from '@/lib/db/schema';
 import { NextRequest } from 'next/server';
 import { nanoid } from 'nanoid';
 import { cartpanda } from '@/lib/cartpanda/instance';
@@ -165,5 +165,111 @@ describe('POST /api/cartpanda/webhook', () => {
         expect(order?.status).toBe('paid');
     });
 
-    // Additional tests...
+    it('returns 400 if the order is missing in the payload', async () => {
+        // Mock request payload without the `order` field
+        const req = new NextRequest('http://localhost/api/cartpanda/webhook', {
+            method: 'POST',
+            body: JSON.stringify({
+                event: 'order.paid',
+            }),
+        });
+
+        // Call the POST handler
+        const res = await POST(req);
+
+        // Assertions
+        expect(res.status).toBe(400);
+        expect(await res.json()).toEqual({ error: 'Invalid payload: order is required' });
+    });
+
+    it('returns 400 for unsupported event types', async () => {
+        // Mock request payload with an unsupported event type
+        const req = new NextRequest('http://localhost/api/cartpanda/webhook', {
+            method: 'POST',
+            body: JSON.stringify({
+                event: 'order.cancelled',
+                order: {
+                    id: '123',
+                    line_items: [{ product_id: 'prod_001', title: 'Sample Product' }],
+                    customer: { email: 'test@example.com' },
+                },
+            }),
+        });
+
+        // Call the POST handler
+        const res = await POST(req);
+
+        // Assertions
+        expect(res.status).toBe(400);
+        expect(await res.json()).toEqual({ error: 'Unsupported event type' });
+    });
+
+    it('updates an existing order if it already exists', async () => {
+        // Insert an existing order into the database
+        await db.insert(orders).values({
+            id: '123',
+            customerId: '456', // Convert number to string
+            productId: 'prod_001',
+            createdAt: new Date('2023-01-01T00:00:00Z'),
+            updatedAt: new Date('2023-01-01T00:00:00Z'),
+            orderToken: 'order-token',
+            status: 'unpaid', // Changed to a valid status
+            refunded: false,
+        });
+
+        // Mock request payload
+        const req = new NextRequest('http://localhost/api/cartpanda/webhook', {
+            method: 'POST',
+            body: JSON.stringify({
+                event: 'order.paid',
+                order: {
+                    id: '123',
+                    line_items: [{ product_id: 'prod_001', title: 'Sample Product' }],
+                    customer: { email: 'test@example.com' },
+                },
+            }),
+        });
+
+        // Call the POST handler
+        const res = await POST(req);
+
+        // Assertions
+        expect(res.status).toBe(200);
+        expect(await res.json()).toEqual({ success: true });
+
+        // Verify the order was updated
+        const order = await db.query.orders.findFirst({
+            where: (orders, { eq }) => eq(orders.id, '123'),
+        });
+        expect(order).toBeDefined();
+        expect(order?.status).toBe('paid');
+        expect(order?.updatedAt).not.toEqual(new Date('2023-01-01T00:00:00Z')); // Ensure updated_at was changed
+    });
+
+    it('returns 500 if a database error occurs', async () => {
+        // Mock a database error
+        jest.spyOn(db, 'insert').mockImplementationOnce(() => {
+            throw new Error('Database error');
+        });
+
+        // Mock request payload
+        const req = new NextRequest('http://localhost/api/cartpanda/webhook', {
+            method: 'POST',
+            body: JSON.stringify({
+                event: 'order.paid',
+                order: {
+                    id: '123',
+                    line_items: [{ product_id: 'prod_001', title: 'Sample Product' }],
+                    customer: { email: 'test@example.com' },
+                },
+            }),
+        });
+
+        // Call the POST handler
+        const res = await POST(req);
+
+        // Assertions
+        expect(res.status).toBe(500);
+        expect(await res.json()).toEqual({ error: 'Internal server error' });
+    });
 });
