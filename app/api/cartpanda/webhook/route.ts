@@ -10,6 +10,7 @@ import { sendMagicLink } from '@/lib/auth/send-magic-link';
 import { cartpanda } from '@/lib/cartpanda/instance';
 import { Order } from '@/lib/cartpanda';
 import { NextRequest } from 'next/server';
+import { sendRefundEmail } from '@/lib/email/refund-email';
 
 export async function POST(
   req: NextRequest,
@@ -20,6 +21,7 @@ export async function POST(
   // to ensure we have the correct order data.
 
   if (!eventOrder) {
+    console.error('Invalid payload: order is required', body);
     return new Response(JSON.stringify({ error: 'Invalid payload: order is required' }), { status: 400 });
   }
 
@@ -85,6 +87,8 @@ export async function POST(
           return new Response(JSON.stringify({ error: 'Order has been refunded' }), { status: 400 });
         }
 
+        const coursesToSend: { name: string; id: string }[] = [];
+
         for (const lineItem of lineItems) {
           await db
             .insert(orders)
@@ -106,12 +110,10 @@ export async function POST(
               },
             });
 
-          await sendMagicLink(
-            email, customerId, {
-            courseName: lineItem.title || lineItem.name,
-            courseId: lineItem.product_id.toString()
-          })
+          coursesToSend.push({ name: lineItem.title || lineItem.name, id: lineItem.product_id.toString() });
         }
+
+        await sendMagicLink(email, customerId, { courses: coursesToSend });
         break;
       }
       case 'order.refunded': {
@@ -139,6 +141,14 @@ export async function POST(
               ));
           }
         }
+
+        const refundedCourses: { name: string; id: string }[] = lineItems.map((lineItem) => ({
+          name: lineItem.title || lineItem.name,
+          id: lineItem.product_id.toString(),
+        }));
+
+        // Notify the user about the refund
+        await sendRefundEmail(email, refundedCourses);
         break;
       }
       default: {

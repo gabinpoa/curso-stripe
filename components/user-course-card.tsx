@@ -4,11 +4,11 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import Image from 'next/image';
-import Link from 'next/link';
-import { Button } from './ui/button';
+} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import Image from "next/image";
+import Link from "next/link";
+import { Button } from "./ui/button";
 
 interface CourseCardProps {
   id: string;
@@ -29,7 +29,11 @@ export default function CourseCard(course: CourseCardProps) {
     <Card key={course.id} className="flex flex-col">
       <CardHeader className="items-center">
         <Image
-          src={course.images[0] || '/static/placeholder.png'}
+          src={
+            course.images[0].length === 0
+              ? "/static/placeholder.png"
+              : course.images[0]
+          }
           alt={course.name}
           width={300}
           height={150}

@@ -5,8 +5,8 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-export const instructorName = "Rafael Nascimento";
-export const siteName = "Zênite Academy";
+export const instructorName = process.env.INSTRUCTOR_NAME || "Default Instructor";
+export const siteName = process.env.SITE_NAME || "Default Site Name";
 export const siteDescription =
-  "A plataforma de aprendizado online para impulsionar sua carreira com cursos de alta qualidade.";
-export const subject = "Online Learning";
+  process.env.SITE_DESCRIPTION || "Default site description.";
+export const subject = process.env.EMAIL_SUBJECT || "Default Subject";

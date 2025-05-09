@@ -3,7 +3,6 @@ import { verifyToken } from '@/lib/auth/token';
 import { db } from '@/lib/db/drizzle';
 import { users } from '@/lib/db/schema';
 import { and, eq } from 'drizzle-orm';
-import { redirect } from 'next/navigation';
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function GET(request: NextRequest) {
@@ -11,7 +10,8 @@ export async function GET(request: NextRequest) {
     const token = searchParams.get('token');
     const courseId = searchParams.get('courseId');
 
-    const redirectUrl = courseId ? `/cursos/${courseId}` : '/';
+    const baseUrl = process.env.BASE_URL;
+    const redirectUrl = courseId ? `${baseUrl}/cursos/${courseId}` : `${baseUrl}/`;
 
     if (!token) {
         return NextResponse.json({ error: 'Invalid token' }, { status: 400 });
@@ -39,8 +39,11 @@ export async function GET(request: NextRequest) {
 
         await setSession(user[0].customerId);
 
-        redirect(redirectUrl);
-    } catch {
-        return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+        console.log('redirecting to:', redirectUrl);
+        return NextResponse.redirect(redirectUrl); // Absolute URL is now used
+    } catch (error) {
+        console.error('Error verifying token:', error);
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        return NextResponse.json({ error: `Internal server error: ${errorMessage}` }, { status: 500 });
     }
 }

@@ -5,6 +5,21 @@ import { NextRequest } from 'next/server';
 import { nanoid } from 'nanoid';
 import { cartpanda } from '@/lib/cartpanda/instance';
 import { eq } from 'drizzle-orm';
+import readline from 'readline';
+
+async function promptUser(message: string): Promise<void> {
+    const rl = readline.createInterface({
+        input: process.stdin,
+        output: process.stdout,
+    });
+
+    return new Promise((resolve) => {
+        rl.question(message, () => {
+            rl.close();
+            resolve();
+        });
+    });
+}
 
 // Correctly mock the cartpanda instance
 jest.mock('@/lib/cartpanda/instance', () => ({
@@ -21,7 +36,7 @@ describe('POST /api/cartpanda/webhook', () => {
         await db.insert(products).values({
             id: 'prod_001',
             name: 'Sample Product',
-            thumbnail: 'https://example.com/thumbnail.jpg',
+            thumbnail: '',
             description: 'This is a sample product description.',
             status: 'active',
             images: JSON.stringify([
@@ -46,7 +61,7 @@ describe('POST /api/cartpanda/webhook', () => {
                 name: 'Module 2',
                 description: 'This is the second module.',
                 order: 2,
-                isExtraContent: false,
+                isExtraContent: true,
             },
         ]);
 
@@ -58,7 +73,7 @@ describe('POST /api/cartpanda/webhook', () => {
                 name: 'Lesson 1',
                 description: 'This is the first lesson of Module 1.',
                 contentType: 'MDX',
-                content: 'Lesson 1 content here.',
+                content: '# Lesson 1\n\nWelcome to the first lesson of Module 1.',
                 order: 1,
             },
             {
@@ -66,8 +81,8 @@ describe('POST /api/cartpanda/webhook', () => {
                 moduleId: 'mod_001',
                 name: 'Lesson 2',
                 description: 'This is the second lesson of Module 1.',
-                contentType: 'VIDEO',
-                content: 'Lesson 2 content here.',
+                contentType: 'MDX',
+                content: '# Lesson 2\n\nThis is the second lesson of Module 1.',
                 order: 2,
             },
             {
@@ -75,8 +90,8 @@ describe('POST /api/cartpanda/webhook', () => {
                 moduleId: 'mod_002',
                 name: 'Lesson 1',
                 description: 'This is the first lesson of Module 2.',
-                contentType: 'DOCUMENT',
-                content: 'Lesson 1 content here.',
+                contentType: 'MDX',
+                content: '# Lesson 1\n\nWelcome to the first lesson of Module 2.',
                 order: 1,
             },
             {
@@ -85,7 +100,7 @@ describe('POST /api/cartpanda/webhook', () => {
                 name: 'Lesson 2',
                 description: 'This is the second lesson of Module 2.',
                 contentType: 'MDX',
-                content: 'Lesson 2 content here.',
+                content: '# Lesson 2\n\nThis is the second lesson of Module 2.',
                 order: 2,
             },
         ]);
@@ -97,13 +112,15 @@ describe('POST /api/cartpanda/webhook', () => {
     });
 
     afterAll(async () => {
-        // Clean up the database after all tests
-        await db.execute('DELETE FROM lessons');
-        await db.execute('DELETE FROM modules');
-        await db.execute('DELETE FROM products');
-        await db.execute('DELETE FROM users');
-        // Close database connections or other resources
-        await db.$client.end();
+        try {
+            await db.execute('DELETE FROM lessons');
+            await db.execute('DELETE FROM modules');
+            await db.execute('DELETE FROM products');
+            await db.execute('DELETE FROM users');
+            await db.$client.end(); // Close the database connection
+        } catch (error) {
+            console.error('Error during cleanup:', error);
+        }
     });
 
     it('handles order.paid event correctly', async () => {
@@ -164,6 +181,77 @@ describe('POST /api/cartpanda/webhook', () => {
         expect(order).toBeDefined();
         expect(order?.status).toBe('paid');
     });
+
+    it(
+        'handles order.paid event correctly and pauses for manual verification',
+        async () => {
+            // Mock CartPanda API responses
+            const mockGetOrder = cartpanda.getOrder as jest.Mock;
+            mockGetOrder.mockResolvedValue({
+                order: {
+                    id: '123',
+                    token: 'order-token',
+                    customer_id: 456,
+                    customer: { email: 'test@example.com' },
+                    created_at: new Date().toISOString(),
+                    updated_at: new Date().toISOString(),
+                    line_items: [
+                        { product_id: 'prod_001', title: 'Sample Product', name: 'Sample Product' },
+                    ],
+                    status_id: 'Paid',
+                },
+            });
+
+            const mockGetCustomers = cartpanda.getCustomers as jest.Mock;
+            mockGetCustomers.mockResolvedValue({
+                customers: [
+                    {
+                        id: 456,
+                        email: 'test@example.com',
+                        first_name: 'John',
+                        last_name: 'Doe',
+                    },
+                ],
+                meta: { total: 1, count: 1, per_page: 10, current_page: 1, last_page: 1 },
+            });
+
+            // Mock request payload
+            const req = new NextRequest('http://localhost/api/cartpanda/webhook', {
+                method: 'POST',
+                body: JSON.stringify({
+                    event: 'order.paid',
+                    order: {
+                        id: '123',
+                        line_items: [{ product_id: 'prod_001', title: 'Sample Product' }],
+                        customer: { email: 'test@example.com' },
+                    },
+                }),
+            });
+
+            // Call the POST handler
+            const res = await POST(req);
+
+            // Assertions
+            expect(res.status).toBe(200);
+            expect(await res.json()).toEqual({ success: true });
+
+            // Verify database interactions
+            const order = await db.query.orders.findFirst({
+                where: (orders, { eq }) => eq(orders.id, '123'),
+            });
+            expect(order).toBeDefined();
+            expect(order?.status).toBe('paid');
+
+            // Pause for manual verification
+            console.log('A magic link email should have been sent to test@example.com.');
+            console.log('Please verify the email and the link before continuing.');
+            await promptUser('Press Enter to continue...');
+
+            // Clean up the database
+            await db.execute('DELETE FROM orders');
+        },
+        20 * 30000 // Set timeout to 30 seconds
+    );
 
     it('returns 400 if the order is missing in the payload', async () => {
         // Mock request payload without the `order` field

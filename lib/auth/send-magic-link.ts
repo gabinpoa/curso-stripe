@@ -1,49 +1,59 @@
-import nodemailer from 'nodemailer';
 import { createEncryptedSession } from './session';
+import { sendEmail } from '../email/send';
+import { siteName } from '../utils'; // Import the dynamic site name
 
-export async function sendMagicLink(email: string, customerId: string, options: { courseName?: string, courseId?: string }) {
-    // Create a transporter object
-    if (!process.env.SMTP_HOST || !process.env.SMTP_PORT || !process.env.SMTP_USER || !process.env.SMTP_PASS || !process.env.SMTP_FROM) {
-        throw new Error('SMTP configuration is missing in environment variables.');
-    }
+interface Course {
+    name: string;
+    id: string;
+}
+
+export async function sendMagicLink(
+    email: string,
+    customerId: string,
+    options: { courses?: Course[]; encryptedSession?: string } = {}
+) {
     if (!process.env.BASE_URL) {
         throw new Error('BASE_URL is not defined in environment variables.');
     }
 
-    const { encryptedSession } = await createEncryptedSession(customerId);
-    let magicLink = `${process.env.BASE_URL}/api/auth/link-magico?token=${encryptedSession}`;
-    let subject = 'Acesse sua conta';
-    let html = `<a href="${magicLink}">Clique aqui para acessar sua conta</a>`;
+    // Use the provided encryptedSession or create a new one
+    const encryptedSession =
+        options.encryptedSession || (await createEncryptedSession(customerId)).encryptedSession;
 
-    if (options.courseName && options.courseId) {
-        magicLink += `&courseId=${options.courseId}`;
-        subject = 'Acesse sua compra: ' + options.courseName;
-        html = `<a href="${magicLink}">${options.courseName}</a>`;
+    const magicLinkBase = `${process.env.BASE_URL}/api/auth/link-magico?token=${encryptedSession}`;
+    let subject = `[${siteName}] Acesse sua conta`;
+    let html = `
+        <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+            <h1 style="color: #4CAF50;">Bem-vindo(a) à ${siteName}!</h1>
+            <p>Olá,</p>
+            <p>Você solicitou acesso à sua conta. Clique no botão abaixo para acessar:</p>
+            <a href="${magicLinkBase}" style="display: inline-block; padding: 10px 20px; color: #fff; background-color: #4CAF50; text-decoration: none; border-radius: 5px;">Acessar Conta</a>
+            <p>Se você não solicitou este acesso, ignore este e-mail.</p>
+            <p>Atenciosamente,<br>Equipe ${siteName}</p>
+        </div>
+    `;
+
+    // If courses are provided, include them in the email
+    if (options.courses && options.courses.length > 0) {
+        const courseLinks = options.courses.map(
+            (course) => `<li><a href="${magicLinkBase}&courseId=${course.id}" style="color: #4CAF50; text-decoration: none;">${course.name}</a></li>`
+        ).join('');
+
+        subject = `[${siteName}] Bem-vindo(a) à nossa plataforma!`;
+        html = `
+            <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+                <h1 style="color: #4CAF50;">Bem-vindo(a) à ${siteName}!</h1>
+                <p>Olá,</p>
+                <p>Estamos felizes em tê-lo(a) conosco. Aqui estão os cursos que você adquiriu:</p>
+                <ul>
+                    ${courseLinks}
+                </ul>
+                <p>Clique nos links acima para acessar seus cursos.</p>
+                <p>Se você não solicitou este acesso, ignore este e-mail.</p>
+                <p>Atenciosamente,<br>Equipe ${siteName}</p>
+            </div>
+        `;
     }
 
-    const transporter = nodemailer.createTransport({
-        host: process.env.SMTP_HOST,
-        port: parseInt(process.env.SMTP_PORT, 10),
-        secure: false,
-        auth: {
-            user: process.env.SMTP_USER,
-            pass: process.env.SMTP_PASS,
-        }
-    });
-
-    const mailOptions = {
-        from: process.env.SMTP_FROM,
-        to: email,
-        subject,
-        html
-    };
-
-    // Send the email using Promises
-    try {
-        const info = await transporter.sendMail(mailOptions);
-        console.log('Email sent:', info.response);
-    } catch (error) {
-        console.error('Error sending email:', error);
-        throw error;
-    }
+    await sendEmail(email, subject, html);
 }
