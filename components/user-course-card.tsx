@@ -27,7 +27,7 @@ interface CourseCardProps {
 export default function CourseCard(course: CourseCardProps) {
   return (
     <Card key={course.id} className="flex flex-col">
-      <CardHeader className="items-center">
+      <CardHeader className="items-center justify-center">
         <Image
           src={
             course.images[0].length === 0
