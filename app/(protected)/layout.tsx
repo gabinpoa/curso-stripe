@@ -1,12 +1,7 @@
 import Header from "@/components/header";
 import { getUser } from "@/lib/db/queries";
-import { User } from "@/lib/db/schema";
 import { redirect } from "next/navigation";
-import { cloneElement, ReactElement, ReactNode } from "react";
-
-export interface MainLayoutChildProps {
-  user: User;
-}
+import { ReactNode } from "react";
 
 export default async function MainLayout({
   children,
@@ -24,7 +19,7 @@ export default async function MainLayout({
     <>
       <Header hasPassword={hasPassword} email={email} />
       <main className="container flex-1 flex flex-col mx-auto py-6">
-        {cloneElement(children as ReactElement<MainLayoutChildProps>, { user })}
+        {children}
       </main>
     </>
   );
