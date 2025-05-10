@@ -6,8 +6,15 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { User } from "lucide-react";
+import Link from "next/link";
 
-export default function UserHeaderMenu({ email }: { email?: string }) {
+export default function UserHeaderMenu({
+  email,
+  hasPassword,
+}: {
+  email: string;
+  hasPassword: boolean;
+}) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -19,6 +26,11 @@ export default function UserHeaderMenu({ email }: { email?: string }) {
         {email && (
           <DropdownMenuItem disabled className="cursor-default">
             <span className="text-sm text-gray-700">{email}</span>
+          </DropdownMenuItem>
+        )}
+        {!hasPassword && (
+          <DropdownMenuItem>
+            <Link href="/criar-senha">Criar uma senha</Link>
           </DropdownMenuItem>
         )}
         <DropdownMenuItem className="text-red-500">

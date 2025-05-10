@@ -5,7 +5,7 @@ import { signToken, verifyToken } from './lib/auth/token';
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const sessionCookie = request.cookies.get('session');
-  const unprotectedPaths = ['/sign-in', '/sign-up', '/auth/link-magico'];
+  const unprotectedPaths = ['/sign-in', '/sign-up', '/magic-link'];
   const isProtectedPath = !unprotectedPaths.some((path) => pathname.startsWith(path));
 
   if (!sessionCookie && isProtectedPath) {

@@ -42,7 +42,7 @@ export function validatedActionWithUser<S extends z.ZodType<any, any>, T>(
   return async (prevState: ActionState, formData: FormData): Promise<T> => {
     const user = await getUser();
     if (!user) {
-      throw new Error("User is not authenticated");
+      return { error: "Usuário não autenticado" } as T;
     }
 
     const result = schema.safeParse(Object.fromEntries(formData));

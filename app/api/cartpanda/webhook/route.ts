@@ -5,7 +5,7 @@ import {
   OrderRefundedWebhook,
 } from '@/lib/cartpanda/webhook-types';
 import { db } from '@/lib/db/drizzle';
-import { createUser } from '@/lib/auth/create-user';
+import { createCustomerInDB } from '@/lib/auth/create-user';
 import { sendMagicLink } from '@/lib/auth/send-magic-link';
 import { cartpanda } from '@/lib/cartpanda/instance';
 import { Order } from '@/lib/cartpanda';
@@ -69,7 +69,7 @@ export async function POST(
     });
 
     if (!customerInDb) {
-      await createUser(
+      await createCustomerInDB(
         eventOrder.customer.email,
       );
     }

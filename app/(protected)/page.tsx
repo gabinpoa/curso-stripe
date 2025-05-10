@@ -1,7 +1,5 @@
-import { Button } from '@/components/ui/button';
-import Link from 'next/link';
-import { getCustomerBoughtProductsModules } from '@/lib/db/queries';
-import CourseCard from '@/components/user-course-card';
+import { getCustomerBoughtProductsModules } from "@/lib/db/queries";
+import CourseCard from "@/components/user-course-card";
 
 export default async function PaginaMeusCursos() {
   const boughtProductsWithModules = await getCustomerBoughtProductsModules();
@@ -31,14 +29,13 @@ export default async function PaginaMeusCursos() {
 
 function DoNotHaveAnyCourses() {
   return (
-    <div className="container mx-auto py-8 text-center">
+    <div className="container mx-auto py-8 text-center h-full">
       <h1 className="text-3xl font-bold mb-6">Meus Cursos</h1>
-      <p className="text-lg text-gray-600">
-        Você ainda não adquiriu nenhum curso.
-      </p>
-      <Link href="/#cursos" passHref>
-        <Button className="mt-4">Ver Cursos</Button>
-      </Link>
+      <div className="flex flex-col items-center justify-center h-full">
+        <p className="text-lg text-gray-600">
+          Você ainda não adquiriu nenhum curso.
+        </p>
+      </div>
     </div>
   );
 }

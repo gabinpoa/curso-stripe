@@ -8,7 +8,7 @@ import { comparePasswords, setSession } from "@/lib/auth/session";
 import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
 import { validatedAction } from "@/lib/auth/middleware";
-import { createUser } from "@/lib/auth/create-user";
+import { sendMagicLink } from "@/lib/auth/send-magic-link";
 
 const signInSchema = z.object({
   email: z.string().email().min(3).max(255),
@@ -61,25 +61,29 @@ export const signIn = validatedAction(signInSchema, async (data) => {
   redirect("/");
 });
 
-const signUpSchema = z.object({
-  email: z.string().email(),
-  password: z.string().min(8),
-});
-
-export const signUp = validatedAction(signUpSchema, async (data) => {
-  const { email } = data;
-
-  const newUser = await createUser(email);
-
-  if ("error" in newUser) {
-    return newUser;
-  }
-
-  await setSession(newUser.customerId);
-
-  redirect("/");
-});
-
 export async function signOut() {
   (await cookies()).delete("session");
 }
+
+const sendMagicLinkSchema = z.object({
+  email: z.string().email('Email inválido.'),
+});
+
+export const sendMagicLinkAction = validatedAction(
+  sendMagicLinkSchema,
+  async ({ email }) => {
+    const customerInDb = await db.query.users.findFirst({
+      where: (users) => eq(users.email, email),
+      columns: {
+        customerId: true,
+        email: true,
+      }
+    });
+    if (!customerInDb) {
+      console.log('User not found in the database:', email);
+      return { success: "Se o email existir, o link foi enviado com sucesso!" };
+    }
+    await sendMagicLink(email, customerInDb.customerId);
+    return { success: "Se o email existir, o link foi enviado com sucesso!" };
+  }
+);

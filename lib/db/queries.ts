@@ -9,17 +9,15 @@ export async function getUser() {
   if (!sessionData) {
     return null;
   }
-  const user = await db
-    .select()
-    .from(users)
-    .where(and(eq(users.customerId, sessionData.user.customerId)))
-    .limit(1);
+  const user = await db.query.users.findFirst({
+    where: eq(users.customerId, sessionData.user.customerId),
+  });
 
-  if (user.length === 0) {
+  if (!user) {
     return null;
   }
 
-  return user[0];
+  return user;
 }
 
 export async function getVerifiedSession() {
@@ -224,8 +222,8 @@ export async function getCustomerBoughtProductsIds() {
   );
   const productsIds = Array.isArray(userWithBoughtProducts[0])
     ? userWithBoughtProducts[0].map(
-        (record: { product_id: string }) => record.product_id
-      )
+      (record: { product_id: string }) => record.product_id
+    )
     : [];
   return productsIds;
 }
