@@ -5,10 +5,11 @@ export async function sendEmail(to: string, subject: string, html: string) {
         throw new Error('SMTP configuration is missing in environment variables.');
     }
 
+    const smtpPort = parseInt(process.env.SMTP_PORT, 10);
     const transporter = nodemailer.createTransport({
         host: process.env.SMTP_HOST,
-        port: parseInt(process.env.SMTP_PORT, 10),
-        secure: false,
+        port: smtpPort,
+        secure: smtpPort === 465, // true for 465, false for other ports
         auth: {
             user: process.env.SMTP_USER,
             pass: process.env.SMTP_PASS,
