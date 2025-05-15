@@ -18,7 +18,7 @@ export async function sendEmail(to: string, subject: string, html: string) {
         to,
         from: process.env.SMTP_FROM,
         headers: {
-            "Content-Type": "text/plain; charset=us-ascii",
+            "Content-Type": "text/plain; charset=utf-8",
         }
     };
 
