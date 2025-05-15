@@ -1,41 +1,47 @@
-export async function sendEmail(to: string, subject: string, html: string) {
-    if (!process.env.SMTP_HOST || !process.env.SMTP_PORT || !process.env.SMTP_USER || !process.env.SMTP_PASS || !process.env.SMTP_FROM) {
-        throw new Error('SMTP configuration is missing in environment variables.');
-    }
+import { SESClient, SendEmailCommand } from "@aws-sdk/client-ses";
 
-    const smtpPort = parseInt(process.env.SMTP_PORT, 10);
-    const smtpTransportOptions = {
-        host: process.env.SMTP_HOST,
-        port: smtpPort,
-        secure: smtpPort === 465, // true for 465, false for other ports
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASS,
-    };
+const ses = new SESClient({
+  region: process.env.AWS_REGION,
+  credentials: {
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
+  },
+});
 
-    const mailOptions = {
-        from: process.env.SMTP_FROM,
-        to,
-        subject,
-        html
-    };
+/**
+ * Returns true if the email was sent successfully, false otherwise.
+ */
+export async function sendEmail(
+  to: string,
+  subject: string,
+  html: string
+): Promise<boolean> {
+  if (
+    !process.env.AWS_REGION ||
+    !process.env.AWS_ACCESS_KEY_ID ||
+    !process.env.AWS_SECRET_ACCESS_KEY ||
+    !process.env.EMAIL_SOURCE
+  ) {
+    console.error("AWS SES configuration is missing in environment variables.");
+    return false;
+  }
 
-    try {
-        const response = await fetch('https://smtp-api-layer.vercel.app/api/smtp-send', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                smtpTransportOptions,
-                mailOptions,
-            })
-        });
-        if (!response.ok || response.status !== 200) {
-            throw new Error(`Failed to send email: ${response.statusText}`);
-        }
-        console.log('Email sent:', await response.json());
-    } catch (error) {
-        console.error('Error sending email:', error);
-        throw error;
-    }
+  const params = {
+    Source: process.env.EMAIL_SOURCE,
+    Destination: { ToAddresses: [to] },
+    Message: {
+      Subject: { Data: subject, Charset: "UTF-8" },
+      Body: { Html: { Data: html, Charset: "UTF-8" } },
+    },
+  };
+
+  try {
+    const command = new SendEmailCommand(params);
+    const response = await ses.send(command);
+    console.log("Email sent:", response);
+    return true;
+  } catch (error) {
+    console.error("Error sending email:", error);
+    return false;
+  }
 }
