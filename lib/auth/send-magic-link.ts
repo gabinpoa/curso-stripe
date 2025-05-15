@@ -27,7 +27,7 @@ export async function sendMagicLink(
             <h1 style="color: #4CAF50;">Bem-vindo(a) à ${siteName}!</h1>
             <p>Olá,</p>
             <p>Você solicitou acesso à sua conta. Clique no botão abaixo para acessar:</p>
-            <a href="${magicLinkBase}" style="display: inline-block; padding: 10px 20px; color: #fff; background-color: #4CAF50; text-decoration: none; border-radius: 5px;">Acessar Conta</a>
+            <a target="_blank" href="${magicLinkBase}" style="display: inline-block; padding: 10px 20px; color: #fff; background-color: #4CAF50; text-decoration: none; border-radius: 5px;">Acessar Conta</a>
             <p>Se você não solicitou este acesso, ignore este e-mail.</p>
             <p>Atenciosamente,<br>Equipe ${siteName}</p>
         </div>
