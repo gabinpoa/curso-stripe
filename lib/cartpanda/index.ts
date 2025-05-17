@@ -8,7 +8,7 @@ export class CartPanda {
   constructor(accessToken: string, shopSlug: string) {
     this.accessToken = accessToken;
     this.shopSlug = shopSlug;
-    this.apiBaseUrl = `https://accounts.cartpanda.com/api/v3/${shopSlug}/`;
+    this.apiBaseUrl = `https://accounts.cartpanda.com/api/v3/${shopSlug}`;
   }
 
   private async request<T>(
@@ -24,6 +24,8 @@ export class CartPanda {
     if (method !== "GET") {
       headers["Content-Type"] = "application/json";
     }
+
+    console.log(`${this.apiBaseUrl}${endpoint}`);
 
     const response = await fetch(`${this.apiBaseUrl}${endpoint}`, {
       method,
