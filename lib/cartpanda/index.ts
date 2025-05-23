@@ -25,8 +25,6 @@ export class CartPanda {
       headers["Content-Type"] = "application/json";
     }
 
-    console.log(`${this.apiBaseUrl}${endpoint}`);
-
     const response = await fetch(`${this.apiBaseUrl}${endpoint}`, {
       method,
       headers,
