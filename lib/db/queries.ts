@@ -1,17 +1,31 @@
-import { and, desc, eq, sql } from 'drizzle-orm';
-import { db } from './drizzle';
-import { Order, orders, products, users } from './schema';
-import { cookies } from 'next/headers';
-import { verifyToken } from '../auth/token';
+import { and, desc, eq, sql } from "drizzle-orm";
+import { db } from "./drizzle";
+import { Order, orders, products, users } from "./schema";
+import { cookies } from "next/headers";
+import { verifyToken } from "../auth/token";
+import { unstable_cache } from "next/cache";
 
 export async function getUser() {
   const sessionData = await getVerifiedSession();
   if (!sessionData) {
     return null;
   }
-  const user = await db.query.users.findFirst({
-    where: eq(users.customerId, sessionData.user.customerId),
-  });
+  const customerId = sessionData.user.customerId;
+
+  const getUserByIdCached = unstable_cache(
+    async () => {
+      const user = await db.query.users.findFirst({
+        where: eq(users.customerId, customerId),
+      });
+      return user;
+    },
+    ["get-user-by-id", customerId],
+    {
+      tags: ["user", `user:${customerId}`],
+    }
+  );
+
+  const user = await getUserByIdCached();
 
   if (!user) {
     return null;
@@ -21,7 +35,7 @@ export async function getUser() {
 }
 
 export async function getVerifiedSession() {
-  const sessionCookie = (await cookies()).get('session');
+  const sessionCookie = (await cookies()).get("session");
   if (!sessionCookie || !sessionCookie.value) {
     return null;
   }
@@ -30,7 +44,7 @@ export async function getVerifiedSession() {
   if (
     !sessionData ||
     !sessionData.user ||
-    typeof sessionData.user.customerId !== 'string'
+    typeof sessionData.user.customerId !== "string"
   ) {
     return null;
   }
@@ -45,7 +59,7 @@ export async function getVerifiedSession() {
 export type Lesson = {
   name: string;
   order: number;
-  contentType: 'MDX' | 'VIDEO' | 'DOCUMENT';
+  contentType: "MDX" | "VIDEO" | "DOCUMENT";
   content: string;
   mdxComponent?: React.ReactNode | null;
 };
@@ -102,6 +116,19 @@ export async function getCourseWithFullModules(
   return course ? course : null;
 }
 
+function getCourseWithFullModulesCached(productId: string) {
+  const cacheFunction = unstable_cache(
+    async () => {
+      return await getCourseWithFullModules(productId);
+    },
+    ["get-course-full", productId],
+    {
+      tags: ["course", `course:${productId}`],
+    }
+  );
+  return cacheFunction();
+}
+
 export async function getCourseWithNonExtraModulesContent(
   productId: string
 ): Promise<CourseWithModulesWithLessons | null> {
@@ -142,13 +169,26 @@ export async function getCourseWithNonExtraModulesContent(
     module_.lessons = module_.lessons.map((lesson) => {
       return {
         ...lesson,
-        content: '# Esse conteúdo fica disponível 7 dias após a compra',
-        contentType: 'MDX',
+        content: "# Esse conteúdo fica disponível 7 dias após a compra",
+        contentType: "MDX",
       };
     });
     return module_;
   });
   return course;
+}
+
+function getCourseWithNonExtraModulesContentCached(productId: string) {
+  const cacheFunction = unstable_cache(
+    async () => {
+      return await getCourseWithNonExtraModulesContent(productId);
+    },
+    ["get-course-partial", productId],
+    {
+      tags: ["course", `course:${productId}`],
+    }
+  );
+  return cacheFunction();
 }
 
 export async function getCoursePreview(productId: string) {
@@ -169,6 +209,20 @@ export async function getCoursePreview(productId: string) {
   });
 
   return course;
+}
+
+export async function getCoursePreviewCached(productId: string) {
+  const cacheFunction = unstable_cache(
+    async () => {
+      return await getCoursePreview(productId);
+    },
+    ["get-course-preview", productId],
+    {
+      tags: ["course", `course:${productId}`],
+    }
+  );
+
+  return cacheFunction();
 }
 
 export async function getCustomerBoughtProductsModules() {
@@ -200,7 +254,7 @@ export async function getCustomerBoughtProductsModules() {
     },
     where: and(
       eq(orders.customerId, session.user.customerId),
-      eq(orders.status, 'paid'),
+      eq(orders.status, "paid"),
       eq(orders.refunded, false)
     ),
   });
@@ -222,8 +276,8 @@ export async function getCustomerBoughtProductsIds() {
   );
   const productsIds = Array.isArray(userWithBoughtProducts[0])
     ? userWithBoughtProducts[0].map(
-      (record: { product_id: string }) => record.product_id
-    )
+        (record: { product_id: string }) => record.product_id
+      )
     : [];
   return productsIds;
 }
@@ -246,7 +300,7 @@ async function getBuyRecordByCustomerIdAndProductId(
 function hasNotRefundedPastSevenDays(teamProductBought: Order) {
   return (
     !boughtInTheLastSevenDays(teamProductBought) &&
-    teamProductBought.status === 'paid' &&
+    teamProductBought.status === "paid" &&
     teamProductBought.refunded === false
   );
 }
@@ -258,7 +312,7 @@ function boughtInTheLastSevenDays(buyRecord: Order) {
   return new Date(buyRecord.createdAt) > sevenDaysAgo;
 }
 
-export type UserAccessToCourseStatus = 'allow_full' | 'allow_partial' | 'deny';
+export type UserAccessToCourseStatus = "allow_full" | "allow_partial" | "deny";
 async function getUserAccessToCourseStatus(
   customerId: string,
   productId: string
@@ -269,16 +323,16 @@ async function getUserAccessToCourseStatus(
   );
 
   if (!productBought) {
-    return 'deny';
+    return "deny";
   } else if (hasNotRefundedPastSevenDays(productBought)) {
-    return 'allow_full';
+    return "allow_full";
   } else if (
-    productBought.status === 'paid' &&
+    productBought.status === "paid" &&
     productBought.refunded === false
   ) {
-    return 'allow_partial';
+    return "allow_partial";
   } else {
-    return 'deny';
+    return "deny";
   }
 }
 
@@ -289,11 +343,19 @@ export async function getCourse(productId: string) {
   }
   const customerId = session.user.customerId;
   const userAccess = await getUserAccessToCourseStatus(customerId, productId);
-  if (userAccess === 'deny') {
+  if (userAccess === "deny") {
     return null;
-  } else if (userAccess === 'allow_partial') {
-    return await getCourseWithNonExtraModulesContent(productId);
+  } else if (userAccess === "allow_partial") {
+    return await getCourseWithNonExtraModulesContentCached(productId);
   } else {
-    return await getCourseWithFullModules(productId);
+    return await getCourseWithFullModulesCached(productId);
   }
+}
+
+// Returns all course IDs for prerendering
+export async function getAllCourseIds(): Promise<string[]> {
+  const courses = await db.query.products.findMany({
+    columns: { id: true },
+  });
+  return courses.map((course) => course.id);
 }
