@@ -255,7 +255,7 @@ function boughtInTheLastSevenDays(buyRecord: Order) {
   const now = new Date();
   const sevenDaysAgo = new Date(now);
   sevenDaysAgo.setDate(now.getDate() - 7);
-  return buyRecord.createdAt > sevenDaysAgo;
+  return new Date(buyRecord.createdAt) > sevenDaysAgo;
 }
 
 export type UserAccessToCourseStatus = 'allow_full' | 'allow_partial' | 'deny';
