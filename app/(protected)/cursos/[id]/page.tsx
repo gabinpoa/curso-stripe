@@ -1,8 +1,8 @@
-import { MDXRemote } from 'next-mdx-remote-client/rsc';
-import CourseContent from '@/components/course-content';
-import { redirect } from 'next/navigation';
-import { CourseWithModulesWithLessons, getCourse } from '@/lib/db/queries';
-import components from '@/components/mdx-components';
+import { MDXRemote } from "next-mdx-remote-client/rsc";
+import CourseContent from "@/components/course-content";
+import { redirect } from "next/navigation";
+import { CourseWithModulesWithLessons, getCourse } from "@/lib/db/queries";
+import components from "@/components/mdx-components";
 
 function addMdxSourceToContent(content: CourseWithModulesWithLessons) {
   const modules = content.modules.map((module) => {
@@ -14,7 +14,7 @@ function addMdxSourceToContent(content: CourseWithModulesWithLessons) {
             components={components}
           />
         );
-      } else if (lesson.contentType === 'MDX') {
+      } else if (lesson.contentType === "MDX") {
         lesson.mdxComponent = (
           <MDXRemote source={lesson.content} components={components} />
         );
@@ -33,7 +33,7 @@ export default async function Page({ params }: Props) {
 
   let courseContent = await getCourse(id);
   if (!courseContent) {
-    redirect('/cursos/' + id + '/visao-geral');
+    redirect("/sign-in");
   }
   courseContent = addMdxSourceToContent(courseContent);
 
