@@ -2,41 +2,49 @@ import { db } from "../db/drizzle";
 import { NewUser, users } from "../db/schema";
 import { cartpanda } from "../cartpanda/instance";
 
-export async function createCustomerInDB(email: string) {
+export async function createCustomerInDB(customerId: string, email: string) {
   try {
-    const customersWithSameEmail = await cartpanda.getCustomers({
-      email: email,
-    });
-
-    if (customersWithSameEmail.customers.length > 1) {
-      console.error("Múltiplos clientes encontrados com o mesmo e-mail:", email);
-      return {
-        error:
-          "Múltiplos clientes encontrados com o mesmo e-mail. Por favor, entre em contato com o suporte.",
-        email,
-      };
-    } else if (customersWithSameEmail.customers.length === 0) {
-      return {
-        error: "Nenhum cliente encontrado com o e-mail fornecido no Cartpanda.",
-        email,
-      };
+    let customer;
+    if (customerId) {
+      // Try to fetch customer by customerId from Cartpanda
+      try {
+        const customerResp = await cartpanda.getCustomer(customerId);
+        customer = customerResp.customer;
+      } catch {
+        // fallback to email lookup below
+      }
     }
-
-    const customer = customersWithSameEmail.customers[0];
-    const customerId = customer.id.toString();
+    if (!customer) {
+      const customersWithSameEmail = await cartpanda.getCustomers({ email });
+      if (customersWithSameEmail.customers.length > 1) {
+        console.error(
+          "Múltiplos clientes encontrados com o mesmo e-mail:",
+          email
+        );
+        return {
+          error:
+            "Múltiplos clientes encontrados com o mesmo e-mail. Por favor, entre em contato com o suporte.",
+          email,
+        };
+      } else if (customersWithSameEmail.customers.length === 0) {
+        return {
+          error:
+            "Nenhum cliente encontrado com o e-mail fornecido no Cartpanda.",
+          email,
+        };
+      }
+      customer = customersWithSameEmail.customers[0];
+    }
     const userName =
       customer.first_name && customer.last_name
         ? `${customer.first_name} ${customer.last_name}`
         : null;
-
     const newUser: NewUser = {
       email,
-      customerId,
+      customerId: customer.id.toString(),
       name: userName,
     };
-
     const queryResult = await db.insert(users).values(newUser);
-
     if (queryResult[0].affectedRows === 0) {
       console.error("Falha ao criar usuário no banco de dados:", newUser);
       return {
@@ -44,7 +52,6 @@ export async function createCustomerInDB(email: string) {
         email,
       };
     }
-
     return newUser;
   } catch (error) {
     console.error("Erro ao criar usuário:", error);

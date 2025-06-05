@@ -2,7 +2,6 @@ import "./globals.css";
 import type { Metadata, Viewport } from "next";
 import { Manrope } from "next/font/google";
 import { siteDescription, siteName } from "@/lib/utils";
-import { Toaster } from "@/components/ui/sonner";
 
 export const metadata: Metadata = {
   title: siteName,
@@ -22,12 +21,14 @@ export default function RootLayout({
 }) {
   return (
     <html
-      lang="en"
+      lang="pt-br"
       className={`bg-white dark:bg-gray-950 text-black dark:text-white ${manrope.className}`}
     >
+      <head>
+        <meta httpEquiv="Content-Type" content="text/html;charset=UTF-8" />
+      </head>
       <body className="min-h-[100dvh] flex flex-col bg-gray-50">
         {children}
-        <Toaster />
       </body>
     </html>
   );

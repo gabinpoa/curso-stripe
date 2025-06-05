@@ -5,16 +5,12 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { getUser } from "@/lib/db/queries";
 import { User } from "lucide-react";
 import Link from "next/link";
+import { Suspense } from "react";
 
-export default function UserHeaderMenu({
-  email,
-  hasPassword,
-}: {
-  email: string;
-  hasPassword: boolean;
-}) {
+export default function UserHeaderMenu() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -23,16 +19,11 @@ export default function UserHeaderMenu({
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent className="w-48">
-        {email && (
-          <DropdownMenuItem disabled className="cursor-default">
-            <span className="text-sm text-gray-700">{email}</span>
-          </DropdownMenuItem>
-        )}
-        {!hasPassword && (
-          <DropdownMenuItem>
-            <Link href="/criar-senha">Criar uma senha</Link>
-          </DropdownMenuItem>
-        )}
+        <Suspense
+          fallback={<DropdownMenuItem disabled>Loading...</DropdownMenuItem>}
+        >
+          <DynamicMenuItems />
+        </Suspense>
         <DropdownMenuItem className="text-red-500">
           <form action={signOut}>
             <button type="submit">Sair da Conta</button>
@@ -40,5 +31,25 @@ export default function UserHeaderMenu({
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
+  );
+}
+
+async function DynamicMenuItems() {
+  const user = await getUser();
+  const email = user?.email;
+  const hasPassword = user?.passwordHash !== null;
+  return (
+    <>
+      {email && (
+        <DropdownMenuItem disabled className="cursor-default">
+          <span className="text-sm text-gray-700">{email}</span>
+        </DropdownMenuItem>
+      )}
+      {!hasPassword && (
+        <DropdownMenuItem>
+          <Link href="/criar-senha">Criar uma senha</Link>
+        </DropdownMenuItem>
+      )}
+    </>
   );
 }

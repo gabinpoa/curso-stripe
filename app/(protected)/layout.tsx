@@ -1,23 +1,12 @@
 import Header from "@/components/header";
-import { getUser } from "@/lib/db/queries";
-import { redirect } from "next/navigation";
 import { ReactNode } from "react";
 
-export default async function MainLayout({
-  children,
-}: {
-  children: ReactNode;
-}) {
-  const user = await getUser();
-  if (!user) {
-    redirect("/sign-in");
-  }
-  const email = user.email;
-  const hasPassword = !!user.passwordHash;
-
+export default function ProtectedLayout({ children }: { children: ReactNode }) {
   return (
     <>
-      <Header hasPassword={hasPassword} email={email} />
+      <div className="sticky top-0 z-50 bg-white border-b">
+        <Header />
+      </div>
       <main className="container flex-1 flex flex-col mx-auto py-6">
         {children}
       </main>

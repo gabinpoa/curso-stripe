@@ -9,7 +9,6 @@ CREATE TABLE `buy_record` (
 	`refunded` boolean NOT NULL DEFAULT false,
 	CONSTRAINT `buy_record_id` PRIMARY KEY(`id`)
 );
---> statement-breakpoint
 CREATE TABLE `lessons` (
 	`id` varchar(255) NOT NULL,
 	`module_id` varchar(255) NOT NULL,
@@ -20,7 +19,6 @@ CREATE TABLE `lessons` (
 	`order` int NOT NULL,
 	CONSTRAINT `lessons_id` PRIMARY KEY(`id`)
 );
---> statement-breakpoint
 CREATE TABLE `modules` (
 	`id` varchar(255) NOT NULL,
 	`product_id` varchar(255) NOT NULL,
@@ -31,7 +29,6 @@ CREATE TABLE `modules` (
 	`level` varchar(50),
 	CONSTRAINT `modules_id` PRIMARY KEY(`id`)
 );
---> statement-breakpoint
 CREATE TABLE `products` (
 	`id` varchar(255) NOT NULL,
 	`name` varchar(100) NOT NULL,
@@ -44,7 +41,6 @@ CREATE TABLE `products` (
 	`checkout_url` varchar(255),
 	CONSTRAINT `products_id` PRIMARY KEY(`id`)
 );
---> statement-breakpoint
 CREATE TABLE `users` (
 	`customer_id` varchar(255) NOT NULL,
 	`name` varchar(100),
@@ -57,7 +53,6 @@ CREATE TABLE `users` (
 	CONSTRAINT `users_customer_id` PRIMARY KEY(`customer_id`),
 	CONSTRAINT `users_email_unique` UNIQUE(`email`)
 );
---> statement-breakpoint
-ALTER TABLE `buy_record` ADD CONSTRAINT `buy_record_customer_id_users_customer_id_fk` FOREIGN KEY (`customer_id`) REFERENCES `users`(`customer_id`) ON DELETE no action ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE `buy_record` ADD CONSTRAINT `buy_record_product_id_products_id_fk` FOREIGN KEY (`product_id`) REFERENCES `products`(`id`) ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE `buy_record` ADD CONSTRAINT `buy_record_customer_id_users_customer_id_fk` FOREIGN KEY (`customer_id`) REFERENCES `users`(`customer_id`) ON DELETE no action ON UPDATE no action;
+ALTER TABLE `buy_record` ADD CONSTRAINT `buy_record_product_id_products_id_fk` FOREIGN KEY (`product_id`) REFERENCES `products`(`id`) ON DELETE no action ON UPDATE no action;
 ALTER TABLE `lessons` ADD CONSTRAINT `lessons_module_id_modules_id_fk` FOREIGN KEY (`module_id`) REFERENCES `modules`(`id`) ON DELETE no action ON UPDATE no action;

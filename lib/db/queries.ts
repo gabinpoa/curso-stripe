@@ -1,9 +1,16 @@
-import { and, desc, eq, sql } from "drizzle-orm";
+import { and, desc, eq } from "drizzle-orm";
 import { db } from "./drizzle";
 import { Order, orders, products, users } from "./schema";
 import { cookies } from "next/headers";
 import { verifyToken } from "../auth/token";
 import { unstable_cache } from "next/cache";
+import {
+  loadFullProduct,
+  loadProductPreview,
+  loadRestrictedProduct,
+} from "../fs/queries";
+import path from "path";
+import { redirect } from "next/navigation";
 
 export async function getUser() {
   const sessionData = await getVerifiedSession();
@@ -22,6 +29,7 @@ export async function getUser() {
     ["get-user-by-id", customerId],
     {
       tags: ["user", `user:${customerId}`],
+      revalidate: 60 * 15,
     }
   );
 
@@ -56,29 +64,30 @@ export async function getVerifiedSession() {
   return sessionData;
 }
 
-export type Lesson = {
+export interface Lesson {
+  id: string;
   name: string;
   order: number;
   contentType: "MDX" | "VIDEO" | "DOCUMENT";
   content: string;
   mdxComponent?: React.ReactNode | null;
-};
+}
 
-export type Module = {
+export interface Module {
   id: string;
   name: string;
   order: number;
   isExtraContent: boolean;
   lessons: Lesson[];
-};
+}
 
-export type CourseWithModulesWithLessons = {
+export interface CourseWithModulesWithLessons {
   id: string;
   name: string;
   thumbnail: string;
   description: string | null;
   modules: Module[];
-};
+}
 
 export async function getCourseWithFullModules(
   productId: string
@@ -101,6 +110,7 @@ export async function getCourseWithFullModules(
         with: {
           lessons: {
             columns: {
+              id: true,
               content: true,
               contentType: true,
               name: true,
@@ -150,6 +160,7 @@ export async function getCourseWithNonExtraModulesContent(
         with: {
           lessons: {
             columns: {
+              id: true,
               content: true,
               contentType: true,
               name: true,
@@ -219,6 +230,7 @@ export async function getCoursePreviewCached(productId: string) {
     ["get-course-preview", productId],
     {
       tags: ["course", `course:${productId}`],
+      revalidate: 60 * 60, // Cache for 1 hour
     }
   );
 
@@ -261,24 +273,36 @@ export async function getCustomerBoughtProductsModules() {
   return userBoughtRecords.map((record) => record.product);
 }
 
+export async function getCustomerBoughtProductsFromFileSystem() {
+  const productsPath = path.join(process.cwd(), "produtos");
+  const boughtProductsIds = await getCustomerBoughtProductsIds();
+  if (!boughtProductsIds || boughtProductsIds.length === 0) {
+    return [];
+  }
+  const products = boughtProductsIds.map((productId) => {
+    return loadProductPreview(productsPath, productId);
+  });
+  return products.filter((product) => product !== null);
+}
+
 export async function getCustomerBoughtProductsIds() {
   const session = await getVerifiedSession();
   if (!session) {
     return undefined;
   }
-  const userWithBoughtProducts = await db.execute(
-    sql.raw(`
-    SELECT b.product_id FROM users u
-    INNER JOIN buy_record b ON u.customer_id = b.customer_id
-    WHERE b.status = 'paid' AND b.refunded = false
-    AND u.deleted_at IS NULL AND u.customer_id = '${session.user.customerId}'
-  `)
-  );
-  const productsIds = Array.isArray(userWithBoughtProducts[0])
-    ? userWithBoughtProducts[0].map(
-        (record: { product_id: string }) => record.product_id
-      )
-    : [];
+  // Use Drizzle ORM instead of raw SQL
+  const userWithBoughtProducts = await db.query.orders.findMany({
+    columns: {
+      productId: true,
+    },
+    with: {},
+    where: and(
+      eq(orders.customerId, session.user.customerId),
+      eq(orders.status, "paid"),
+      eq(orders.refunded, false)
+    ),
+  });
+  const productsIds = userWithBoughtProducts.map((order) => order.productId);
   return productsIds;
 }
 
@@ -313,7 +337,7 @@ function boughtInTheLastSevenDays(buyRecord: Order) {
 }
 
 export type UserAccessToCourseStatus = "allow_full" | "allow_partial" | "deny";
-async function getUserAccessToCourseStatus(
+export async function getUserAccessToCourseStatus(
   customerId: string,
   productId: string
 ): Promise<UserAccessToCourseStatus> {
@@ -349,6 +373,31 @@ export async function getCourse(productId: string) {
     return await getCourseWithNonExtraModulesContentCached(productId);
   } else {
     return await getCourseWithFullModulesCached(productId);
+  }
+}
+
+export async function getCourseFromFileSystem(productId: string) {
+  const session = await getVerifiedSession();
+  if (!session) {
+    redirect("/sign-in");
+  }
+  const customerId = session.user.customerId;
+  const userAccess = await getUserAccessToCourseStatus(customerId, productId);
+  const productsPath = path.join(process.cwd(), "produtos");
+  if (userAccess === "deny") {
+    return null;
+  } else if (userAccess === "allow_partial") {
+    const product = loadRestrictedProduct(productsPath, productId);
+    if (!product) {
+      console.error(`Product ${productId} not found in file system.`);
+    }
+    return product;
+  } else {
+    const product = loadFullProduct(productsPath, productId);
+    if (!product) {
+      console.error(`Product ${productId} not found in file system.`);
+    }
+    return product;
   }
 }
 

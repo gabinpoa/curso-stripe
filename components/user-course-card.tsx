@@ -20,8 +20,9 @@ interface CourseCardProps {
     description?: string | null;
     name: string;
     order: number;
-    isExtraContent: boolean;
+    isExtra: boolean;
   }[];
+  disabled?: boolean;
 }
 
 export default function CourseCard(course: CourseCardProps) {
@@ -29,11 +30,7 @@ export default function CourseCard(course: CourseCardProps) {
     <Card key={course.id} className="flex flex-col">
       <CardHeader className="items-center justify-center">
         <Image
-          src={
-            course.images[0].length === 0
-              ? "/static/placeholder.png"
-              : course.images[0]
-          }
+          src={course.images[0]}
           alt={course.name}
           width={300}
           height={150}
@@ -47,16 +44,16 @@ export default function CourseCard(course: CourseCardProps) {
           {course.modules.map((module, index) => (
             <div key={index} className="flex items-center justify-between">
               <span className="text-sm">{module.name}</span>
-              {module.isExtraContent && (
-                <Badge variant="secondary">Extra</Badge>
-              )}
+              {module.isExtra && <Badge variant="secondary">Extra</Badge>}
             </div>
           ))}
         </div>
       </CardContent>
       <CardFooter>
         <Link href={`/cursos/${course.id}`} passHref className="w-full">
-          <Button className="w-full">Acessar Curso</Button>
+          <Button disabled={!!course.disabled} className="w-full">
+            Acessar Curso
+          </Button>
         </Link>
       </CardFooter>
     </Card>

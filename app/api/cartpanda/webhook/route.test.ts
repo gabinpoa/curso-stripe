@@ -1,6 +1,6 @@
 import { POST } from "./route";
 import { db } from "@/lib/db/drizzle";
-import { users, orders } from "@/lib/db/schema";
+import { users, orders, products } from "@/lib/db/schema";
 import { NextRequest } from "next/server";
 import { cartpanda } from "@/lib/cartpanda/instance";
 import { eq } from "drizzle-orm";
@@ -23,9 +23,18 @@ async function promptUser(message: string): Promise<void> {
 // Correctly mock the cartpanda instance
 jest.mock("@/lib/cartpanda/instance", () => ({
   cartpanda: {
-    getOrder: jest.fn(), // Mock the getOrder method
-    getCustomers: jest.fn(), // Mock the getCustomers method
+    getOrder: jest.fn(),
+    getCustomers: jest.fn(),
+    getProduct: jest.fn(),
   },
+}));
+
+// Mock sendEmail to log instead of sending real emails
+jest.mock("@/lib/email/send", () => ({
+  sendEmail: jest.fn((to, subject, html) => {
+    console.log("[MOCK EMAIL] HTML:", html);
+    return Promise.resolve(true);
+  }),
 }));
 
 describe("POST /api/cartpanda/webhook", () => {
@@ -49,13 +58,15 @@ describe("POST /api/cartpanda/webhook", () => {
   });
 
   afterEach(async () => {
-    // Clean up the database after each test
-    await db.execute("DELETE FROM orders");
+    // Clean up only test data after each test
+    await db.execute("DELETE FROM orders WHERE id = '123'");
+    await db.execute("DELETE FROM products WHERE id IN ('888', '999')");
   });
 
   afterAll(async () => {
     try {
-      await db.execute("DELETE FROM users");
+      // Only delete the test user, not all users
+      await db.delete(users).where(eq(users.email, process.env.SEND_TO_EMAIL!));
       await db.$client.end(); // Close the database connection
     } catch (error) {
       console.error("Error during cleanup:", error);
@@ -317,4 +328,129 @@ describe("POST /api/cartpanda/webhook", () => {
     expect(res.status).toBe(500);
     expect(await res.json()).toEqual({ error: "Internal server error" });
   });
+
+  it("handles product.created event correctly", async () => {
+    const mockProduct = {
+      id: "999",
+      title: "New Product",
+      status: "active",
+      images: [{ url: "https://example.com/image.png" }],
+    };
+    const mockGetProduct = cartpanda.getProduct as jest.Mock;
+    mockGetProduct.mockResolvedValue(mockProduct);
+
+    // Remove product if it already exists
+    await db.execute(`DELETE FROM products WHERE id = '999'`);
+
+    const req = new NextRequest("http://localhost/api/cartpanda/webhook", {
+      method: "POST",
+      body: JSON.stringify({
+        event: "product.created",
+        product: {
+          id: "999",
+        },
+      }),
+    });
+
+    const res = await POST(req);
+
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({
+      success: true,
+      message: "Product created event received",
+    });
+
+    // Verify product in DB
+    const dbProduct = await db.query.products.findFirst({
+      where: (products, { eq }) => eq(products.id, "999"),
+    });
+    expect(dbProduct).toBeDefined();
+    expect(dbProduct?.name).toBe("New Product");
+    expect(dbProduct?.status).toBe("active");
+    expect(dbProduct?.thumbnail).toBe("https://example.com/image.png");
+  });
+
+  it("handles product.updated event correctly", async () => {
+    // Remove product if it already exists
+    await db.execute(`DELETE FROM products WHERE id = '888'`);
+    // Insert a product to update
+    await db.insert(products).values({
+      id: "888",
+      name: "Old Name",
+      status: "inactive",
+      thumbnail: "/static/placeholder.png",
+      description: null,
+      images: null,
+    });
+
+    const mockProduct = {
+      id: "888",
+      title: "Updated Product",
+      status: "active",
+      images: [{ url: "https://example.com/updated.png" }],
+    };
+    const mockGetProduct = cartpanda.getProduct as jest.Mock;
+    mockGetProduct.mockResolvedValue(mockProduct);
+
+    const req = new NextRequest("http://localhost/api/cartpanda/webhook", {
+      method: "POST",
+      body: JSON.stringify({
+        event: "product.updated",
+        product: {
+          id: "888",
+        },
+      }),
+    });
+
+    const res = await POST(req);
+
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({
+      success: true,
+      message: "Product updated event received",
+    });
+
+    // Verify product in DB
+    const dbProduct = await db.query.products.findFirst({
+      where: (products, { eq }) => eq(products.id, "888"),
+    });
+    expect(dbProduct).toBeDefined();
+    expect(dbProduct?.name).toBe("Updated Product");
+    expect(dbProduct?.status).toBe("active");
+    expect(dbProduct?.thumbnail).toBe("https://example.com/updated.png");
+  });
+
+  it("returns 400 if the product is missing in the payload for product.created", async () => {
+    const req = new NextRequest("http://localhost/api/cartpanda/webhook", {
+      method: "POST",
+      body: JSON.stringify({
+        event: "product.created",
+      }),
+    });
+
+    const res = await POST(req);
+
+    expect(res.status).toBe(400);
+    expect(await res.json()).toEqual({
+      error: "Invalid payload: product is required",
+    });
+  });
+
+  it("returns 400 if the product is missing in the payload for product.updated", async () => {
+    const req = new NextRequest("http://localhost/api/cartpanda/webhook", {
+      method: "POST",
+      body: JSON.stringify({
+        event: "product.updated",
+      }),
+    });
+
+    const res = await POST(req);
+
+    expect(res.status).toBe(400);
+    expect(await res.json()).toEqual({
+      error: "Invalid payload: product is required",
+    });
+  });
 });
+
+// We recommend installing an extension to run jest tests.

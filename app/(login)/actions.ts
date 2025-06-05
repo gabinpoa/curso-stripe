@@ -63,10 +63,11 @@ export const signIn = validatedAction(signInSchema, async (data) => {
 
 export async function signOut() {
   (await cookies()).delete("session");
+  redirect("/sign-in");
 }
 
 const sendMagicLinkSchema = z.object({
-  email: z.string().email('Email inválido.'),
+  email: z.string().email("Email inválido."),
 });
 
 export const sendMagicLinkAction = validatedAction(
@@ -77,10 +78,10 @@ export const sendMagicLinkAction = validatedAction(
       columns: {
         customerId: true,
         email: true,
-      }
+      },
     });
     if (!customerInDb) {
-      console.log('User not found in the database:', email);
+      console.log("User not found in the database:", email);
       return { success: "Se o email existir, o link foi enviado com sucesso!" };
     }
     await sendMagicLink(email, customerInDb.customerId);
