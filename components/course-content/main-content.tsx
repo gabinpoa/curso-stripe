@@ -2,10 +2,8 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { SidebarTrigger } from "@/components/ui/sidebar";
-import { Separator } from "@/components/ui/separator";
-import { Check, Play, FileText, ChevronLeft, ChevronRight } from "lucide-react";
+import { SidebarTrigger, useSidebar } from "@/components/ui/sidebar";
+import { Check, ChevronLeft, ChevronRight } from "lucide-react";
 import { Lesson, Product } from "@/lib/fs/queries";
 
 interface CourseContentMainProps {
@@ -21,6 +19,7 @@ export function CourseContentMain({
   onLessonComplete,
   onLessonSelect,
 }: CourseContentMainProps) {
+  const { open } = useSidebar();
   // Find current lesson index for navigation
   const allLessons = courseData.modules.flatMap((module) => module.lessons);
   const currentIndex = allLessons.findIndex(
@@ -49,38 +48,18 @@ export function CourseContentMain({
   return (
     <div className="flex flex-col h-full">
       {/* Lesson Header */}
-      <header className="flex h-14 md:h-16 shrink-0 items-center gap-2 border-b px-3 md:px-6 bg-white">
-        <SidebarTrigger className="-ml-1" />
-        <Separator orientation="vertical" className="mr-2 h-4" />
-        <div className="flex items-center gap-2 flex-1 min-w-0">
-          {selectedLesson.type === "video" ? (
-            <Play className="w-3 h-3 md:w-4 md:h-4 flex-shrink-0" />
-          ) : (
-            <FileText className="w-3 h-3 md:w-4 md:h-4 flex-shrink-0" />
-          )}
-          <h1
-            className="font-medium md:font-semibold text-sm md:text-base truncate"
-            title={selectedLesson.name}
-          >
-            {selectedLesson.name}
-          </h1>
-          {selectedLesson.completed && (
-            <Badge
-              variant="secondary"
-              className="bg-green-100 text-green-700 flex-shrink-0 text-xs"
-            >
-              <Check className="w-2 h-2 md:w-3 md:h-3 mr-1" />
-              <span className="hidden sm:inline">Concluído</span>
-              <span className="sm:hidden">✓</span>
-            </Badge>
-          )}
-        </div>
+      <header className="flex h-14 md:h-16 shrink-0 items-center gap-2 border-b px-3 md:px-6 bg-background">
+        <SidebarTrigger className="-ml-1">Menu de Conteúdos</SidebarTrigger>
       </header>
 
       {/* Main Content Area - Properly Centered */}
       <main className="flex-1 overflow-auto flex justify-center">
-        <div className="w-full max-w-4xl mx-auto px-3 md:px-6 py-3 md:py-6">
-          <Card className="mb-4 md:mb-6">
+        <div
+          className={
+            "w-full max-w-4xl mx-auto sm:px-3" + (!open ? " md:px-6" : "")
+          }
+        >
+          <Card className="mb-4 md:mb-6 bg-zenite-background-light">
             <CardHeader className="p-3 md:p-6 pb-2 md:pb-4">
               <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
                 <CardTitle className="text-lg md:text-2xl flex-1 min-w-0 leading-tight">
@@ -89,7 +68,7 @@ export function CourseContentMain({
                 <Button
                   variant={selectedLesson.completed ? "secondary" : "default"}
                   onClick={() => onLessonComplete(selectedLesson.id)}
-                  className="flex items-center gap-2 flex-shrink-0 text-sm w-full sm:w-auto"
+                  className="flex py-5 items-center gap-2 flex-shrink-0 text-sm w-full sm:w-auto"
                   size="sm"
                 >
                   {selectedLesson.completed ? (

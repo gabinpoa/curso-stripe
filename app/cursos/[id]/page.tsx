@@ -13,9 +13,7 @@ export default async function Page({ params }: Props) {
   return (
     <div className="min-h-screen bg-background">
       {/* Global Header */}
-      <div className="sticky top-0 z-50 bg-white border-b">
-        <Header />
-      </div>
+      <Header />
 
       <SidebarProvider>
         <div className="flex h-[calc(100vh-theme(spacing.16))] w-full">
@@ -33,7 +31,5 @@ async function CourseContentPage({ id }: { id: string }) {
   if (!courseContent) {
     notFound();
   }
-  console.log("Course content loaded:", courseContent.modules[1].lessons);
-  console.log("Course content loaded:", courseContent.modules[0].lessons);
   return <CourseContentPageClient courseContent={courseContent} />;
 }

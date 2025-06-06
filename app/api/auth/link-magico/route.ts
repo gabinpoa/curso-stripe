@@ -41,7 +41,6 @@ export async function GET(request: NextRequest) {
 
     await setSession(user[0].customerId);
 
-    console.log("redirecting to:", redirectUrl);
     return NextResponse.redirect(redirectUrl); // Absolute URL is now used
   } catch (error) {
     console.error("Error verifying token:", error);

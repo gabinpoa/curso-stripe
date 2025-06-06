@@ -229,8 +229,8 @@ button {
   --sidebar-accent-foreground: hsl(240 5.9% 10%);
   --sidebar-border: hsl(220 13% 91%);
   --sidebar-ring: hsl(217.2 91.2% 59.8%);
-  --zenite-primary: #5b3e8f;
-  --zenite-primary-light: #5b3e8f; /* mesma cor, mas pode ajustar se quiser um tom mais claro */
+  --zenite-primary: #3d2760;
+  --zenite-primary-light: #5b3e8f;
   --zenite-bg: #e7e2f2;
   --zenite-bg-light: #fbf9fe;
   --zenite-bg-sidebar: #f7f4fe;
@@ -280,13 +280,13 @@ button {
 */
 
 @theme inline {
-  --color-background: var(--background);
+  --color-background: var(--zenite-bg);
   --color-foreground: var(--foreground);
-  --color-card: var(--card);
+  --color-card: var(--zenite-bg-light);
   --color-card-foreground: var(--card-foreground);
   --color-popover: var(--popover);
   --color-popover-foreground: var(--popover-foreground);
-  --color-primary: var(--zenite-primary);
+  --color-primary: var(--zenite-primary-light);
   --color-primary-foreground: var(--primary-foreground);
   --color-secondary: var(--secondary);
   --color-secondary-foreground: var(--secondary-foreground);
@@ -316,6 +316,9 @@ button {
   --color-sidebar-primary: var(--sidebar-primary);
   --color-sidebar-foreground: var(--sidebar-foreground);
   --color-sidebar: var(--zenite-bg-sidebar);
+  --color-zenite-background: var(--zenite-bg);
+  --color-zenite-primary: var(--zenite-primary);
+  --color-zenite-background-light: var(--zenite-bg-light);
 }
 
 /*
