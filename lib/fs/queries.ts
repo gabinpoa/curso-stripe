@@ -96,9 +96,13 @@ function getLessons(
       const uniqueLessonId = `${moduleId}/${lessonId}`;
 
       if (videoFile) {
-        const videoUrl = fs
+        let videoUrl = fs
           .readFileSync(path.join(modulePath, videoFile), "utf8")
           .trim();
+        // Ensure the URL is in /embed/ format for iframe embedding
+        if (videoUrl.includes('/play/')) {
+          videoUrl = videoUrl.replace('/play/', '/embed/');
+        }
         return {
           id: uniqueLessonId,
           name,

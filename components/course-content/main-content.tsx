@@ -82,28 +82,38 @@ export function CourseContentMain({
                 </Button>
               </div>
             </CardHeader>
-            <CardContent className="p-3 md:p-6 pt-0">
+            <CardContent className="p-2 md:p-6 pt-0">
               {selectedLesson.type === "video" ? (
-                <div className="relative aspect-video rounded-lg overflow-hidden bg-muted">
+                <div style={{ position: "relative", paddingTop: "56.25%" }}>
                   <iframe
-                    src={`${selectedLesson.videoUrl}?autoplay=false&loop=false&muted=false&preload=true&responsive=true&rememberPosition=true`}
+                    src={`${selectedLesson.videoUrl}?autoplay=false&loop=false&muted=false&preload=true&responsive=true`}
                     loading="lazy"
-                    className="absolute inset-0 w-full h-full"
-                    allow="accelerometer;gyroscope;autoplay;encrypted-media;picture-in-picture;"
+                    style={{
+                      border: 0,
+                      position: "absolute",
+                      top: 0,
+                      height: "100%",
+                      width: "100%",
+                    }}
+                    allow="accelerometer;gyroscope;encrypted-media;picture-in-picture;"
                     allowFullScreen={true}
-                  />
+                  ></iframe>
                 </div>
               ) : (
-                  <iframe
-                    srcDoc={`<html>
+                <iframe
+                  srcDoc={`<html>
                       <head>
-                    ${courseData.cssContent ? `<style>${courseData.cssContent}</style>` : ""}
+                    ${
+                      courseData.cssContent
+                        ? `<style>${courseData.cssContent}</style>`
+                        : ""
+                    }
                       
                       </head>
                       <body>${selectedLesson.htmlContent}</body>
                       </html>`}
-                    className="w-full h-64"
-                  />
+                  className="w-full h-64"
+                />
               )}
             </CardContent>
           </Card>
