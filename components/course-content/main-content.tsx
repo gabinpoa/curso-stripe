@@ -94,12 +94,16 @@ export function CourseContentMain({
                   />
                 </div>
               ) : (
-                <div
-                  dangerouslySetInnerHTML={{
-                    __html: selectedLesson.htmlContent || "",
-                  }}
-                  className="prose prose-sm md:prose max-w-none"
-                ></div>
+                  <iframe
+                    srcDoc={`<html>
+                      <head>
+                    ${courseData.cssContent ? `<style>${courseData.cssContent}</style>` : ""}
+                      
+                      </head>
+                      <body>${selectedLesson.htmlContent}</body>
+                      </html>`}
+                    className="w-full h-64"
+                  />
               )}
             </CardContent>
           </Card>

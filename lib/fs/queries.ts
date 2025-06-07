@@ -28,6 +28,7 @@ export type Product = {
   name: string;
   thumbnail?: string;
   modules: Module[];
+  cssContent?: string; // Optional, contains CSS from product folder if present
 };
 
 export type ProductPreview = Omit<Product, "modules"> & {
@@ -130,6 +131,16 @@ function getLessons(
     .sort((a, b) => a.order - b.order);
 }
 
+// Helper to get the first CSS file content in a product folder
+function getProductCssContent(productPath: string): string | undefined {
+  const files = fs.readdirSync(productPath);
+  const cssFile = files.find((f) => f.endsWith(".css"));
+  if (cssFile) {
+    return fs.readFileSync(path.join(productPath, cssFile), "utf8");
+  }
+  return undefined;
+}
+
 // 1. Load full product (all modules and lessons)
 export function loadFullProduct(
   productsPath: string,
@@ -140,6 +151,7 @@ export function loadFullProduct(
   const names = parseNames(productPath);
   const productName = names["product"] || productId;
   const thumbnail = getThumbnailFromNames(names); // Now just the public path
+  const cssContent = getProductCssContent(productPath);
 
   const modules = getModuleList(productPath).map(
     ({ id: moduleId, order, isExtra }) => {
@@ -160,6 +172,7 @@ export function loadFullProduct(
     name: productName,
     thumbnail,
     modules,
+    cssContent,
   };
 }
 
@@ -173,6 +186,7 @@ export function loadRestrictedProduct(
   const names = parseNames(productPath);
   const productName = names["product"] || productId;
   const thumbnail = getThumbnailFromNames(names); // Now just the public path
+  const cssContent = getProductCssContent(productPath);
 
   const lockedHtml = `<h2>Os módulos extras ficam disponíveis 7 dias após a compra</h2>`;
 
@@ -197,6 +211,7 @@ export function loadRestrictedProduct(
     name: productName,
     thumbnail,
     modules,
+    cssContent,
   };
 }
 
