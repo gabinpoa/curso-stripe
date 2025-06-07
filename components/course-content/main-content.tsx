@@ -1,5 +1,6 @@
 "use client";
 
+import React, { useRef, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { SidebarTrigger, useSidebar } from "@/components/ui/sidebar";
@@ -20,6 +21,8 @@ export function CourseContentMain({
   onLessonSelect,
 }: CourseContentMainProps) {
   const { open } = useSidebar();
+  const iframeRef = useRef<HTMLIFrameElement>(null);
+
   // Find current lesson index for navigation
   const allLessons = courseData.modules.flatMap((module) => module.lessons);
   const currentIndex = allLessons.findIndex(
@@ -45,6 +48,25 @@ export function CourseContentMain({
     }
   };
 
+  useEffect(() => {
+    if (selectedLesson.type === "html" && iframeRef.current) {
+      const iframe = iframeRef.current;
+      const onLoad = () => {
+        try {
+          const doc = iframe.contentDocument || iframe.contentWindow?.document;
+          if (doc) {
+            const height = doc.body.scrollHeight;
+            iframe.style.height = height + "px";
+          }
+        } catch {
+          // Cross-origin, can't access
+        }
+      };
+      iframe.addEventListener("load", onLoad);
+      return () => iframe.removeEventListener("load", onLoad);
+    }
+  }, [selectedLesson]);
+
   return (
     <div className="flex flex-col h-full">
       {/* Lesson Header */}
@@ -56,7 +78,7 @@ export function CourseContentMain({
       <main className="flex-1 overflow-auto flex justify-center">
         <div
           className={
-            "w-full max-w-4xl mx-auto sm:px-3" + (!open ? " md:px-6" : "")
+            "w-full max-w-5xl mx-auto sm:px-3" + (!open ? " md:px-6" : "")
           }
         >
           <Card className="mb-4 md:mb-6 bg-zenite-background-light">
@@ -101,18 +123,20 @@ export function CourseContentMain({
                 </div>
               ) : (
                 <iframe
+                  ref={iframeRef}
                   srcDoc={`<html>
-                      <head>
-                    ${
-                      courseData.cssContent
-                        ? `<style>${courseData.cssContent}</style>`
-                        : ""
-                    }
-                      
-                      </head>
-                      <body>${selectedLesson.htmlContent}</body>
-                      </html>`}
-                  className="w-full h-64"
+            <head>
+              ${
+                courseData.cssContent
+                  ? `<style>${courseData.cssContent}</style>`
+                  : ""
+              }
+            </head>
+            <body>${selectedLesson.htmlContent}</body>
+          </html>`}
+                  className="w-full"
+                  style={{ border: 0, width: "100%" }}
+                  sandbox="allow-scripts allow-same-origin"
                 />
               )}
             </CardContent>
