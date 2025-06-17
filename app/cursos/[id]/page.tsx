@@ -6,6 +6,9 @@ import Fallback from "@/components/course-content/fallback";
 import Header from "@/components/header";
 import { getCourseFromFileSystem } from "@/lib/db/queries";
 import CourseContentSidebarTrigger from "@/components/course-content/sidebar-trigger";
+import { Lesson } from "@/lib/fs/queries";
+import { orders } from "@/lib/db/schema";
+import { db } from "@/lib/db/drizzle";
 
 type Props = { params: Promise<{ id: string }> };
 export default async function Page({ params }: Props) {
@@ -37,5 +40,24 @@ async function CourseContentPage({ id }: { id: string }) {
   if (!courseContent) {
     notFound();
   }
-  return <CourseContentPageClient courseContent={courseContent} />;
+
+  async function updateCompletedLessonsOnDb(lessons: Lesson[]) {
+    "use server";
+    const completedLessons = lessons
+      .filter((lesson) => lesson.completed)
+      .map((lesson) => lesson.id);
+    const completedLessonsString = JSON.stringify(completedLessons);
+    try {
+      await db.update(orders).set({ completedLessons: completedLessonsString });
+    } catch (error) {
+      console.error("Server: Failed to update completed lessons in DB:", error);
+      throw error; // Re-throw to handle it in the calling function
+    }
+  }
+  return (
+    <CourseContentPageClient
+      updateCompletedLessonsOnDb={updateCompletedLessonsOnDb}
+      courseContent={courseContent}
+    />
+  );
 }

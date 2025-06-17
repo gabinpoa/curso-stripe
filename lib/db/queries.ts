@@ -208,3 +208,28 @@ export async function getAllCourseIds(): Promise<string[]> {
   });
   return courses.map((course) => course.id);
 }
+
+export async function getCompletedLessons(productId: string) {
+  const session = await getVerifiedSession();
+  if (!session) {
+    redirect("/sign-in");
+  }
+  const customerId = session.user.customerId;
+  const response = await db.query.orders.findFirst({
+    columns: { completedLessons: true },
+    where: and(
+      eq(orders.customerId, customerId),
+      eq(orders.productId, productId),
+      eq(orders.status, "paid"),
+      eq(orders.refunded, false)
+    ),
+  });
+  if (
+    !response ||
+    !response.completedLessons ||
+    response.completedLessons === ""
+  ) {
+    return [];
+  }
+  return JSON.parse(response.completedLessons) as string[];
+}
