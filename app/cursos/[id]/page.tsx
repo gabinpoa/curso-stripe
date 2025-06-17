@@ -5,6 +5,7 @@ import CourseContentPageClient from "@/components/course-content/client-page";
 import Fallback from "@/components/course-content/fallback";
 import Header from "@/components/header";
 import { getCourseFromFileSystem } from "@/lib/db/queries";
+import CourseContentSidebarTrigger from "@/components/course-content/sidebar-trigger";
 
 type Props = { params: Promise<{ id: string }> };
 export default async function Page({ params }: Props) {
@@ -12,14 +13,19 @@ export default async function Page({ params }: Props) {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Global Header */}
-      <Header />
-
       <SidebarProvider>
-        <div className="flex h-[calc(100vh-theme(spacing.16))] w-full">
-          <Suspense fallback={<Fallback />}>
-            <CourseContentPage id={id} />
-          </Suspense>
+        <div className="flex flex-1 flex-col w-full">
+          {/* Global Header */}
+          <div className="sticky top-0 z-50 space-y-4 flex flex-col mb-2">
+            <Header />
+            <CourseContentSidebarTrigger />
+          </div>
+
+          <div className="flex flex-1">
+            <Suspense fallback={<Fallback />}>
+              <CourseContentPage id={id} />
+            </Suspense>
+          </div>
         </div>
       </SidebarProvider>
     </div>

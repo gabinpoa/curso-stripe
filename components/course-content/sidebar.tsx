@@ -52,7 +52,7 @@ export function CourseContentSidebar({
   const [expandedModules, setExpandedModules] = useState<Set<string>>(
     new Set(["1"])
   );
-  const { setOpenMobile, isMobile } = useSidebar();
+  const { setOpenMobile, setOpen, isMobile } = useSidebar();
 
   const toggleModule = (moduleId: string) => {
     setExpandedModules((prev) => {
@@ -74,29 +74,27 @@ export function CourseContentSidebar({
   return (
     <Sidebar variant="sidebar" collapsible="offcanvas" className="border-r">
       <SidebarHeader className="px-4 py-6 md:py-8 md:px-6 border-b md:mt-[57px] relative">
-        {isMobile && (
-          <button
-            type="button"
-            onClick={() => setOpenMobile(false)}
-            className="absolute right-4 top-4 z-10 p-2 rounded-md hover:bg-muted transition-colors focus:outline-none focus:ring-2 focus:ring-primary"
-            aria-label="Fechar menu"
+        <button
+          type="button"
+          onClick={() => (isMobile ? setOpenMobile(false) : setOpen(false))}
+          className="absolute right-4 top-4 z-10 p-2 rounded-md hover:bg-muted transition-colors focus:outline-none focus:ring-2 focus:ring-primary"
+          aria-label="Fechar menu"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            className="h-5 w-5"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={2}
           >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="h-5 w-5"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              strokeWidth={2}
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M6 18L18 6M6 6l12 12"
-              />
-            </svg>
-          </button>
-        )}
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M6 18L18 6M6 6l12 12"
+            />
+          </svg>
+        </button>
         <div className="space-y-4">
           <div>
             <h2

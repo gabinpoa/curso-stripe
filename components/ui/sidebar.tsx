@@ -264,22 +264,24 @@ function SidebarTrigger({
   const hasLabel = !!children;
 
   return (
-    <Button
+    <button
       data-sidebar="trigger"
       data-slot="sidebar-trigger"
-      variant="ghost"
-      size={hasLabel ? "default" : "icon"}
-      className={cn(hasLabel ? "gap-2 px-3 h-8" : "size-7", className)}
+      className={cn(
+        hasLabel ? "gap-2" : "",
+        className,
+        " flex items-center text-sm font-medium"
+      )}
       onClick={(event) => {
         onClick?.(event);
         toggleSidebar();
       }}
       {...props}
     >
-      <PanelLeftIcon />
+      <PanelLeftIcon size={hasLabel ? 18 : 24} />
       {hasLabel && <span>{children}</span>}
       <span className="sr-only">Toggle Sidebar</span>
-    </Button>
+    </button>
   );
 }
 

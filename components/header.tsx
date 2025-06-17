@@ -4,12 +4,12 @@ import UserHeaderMenu from "./user-header-menu";
 
 export default function Header() {
   return (
-    <div className="sticky top-0 z-50 bg-zenite-background-light border-b shadow-sm">
+    <div className="bg-zenite-background-light border-b shadow-sm">
       <header className="container mx-auto py-4 px-4 md:px-6">
         <nav className="flex justify-between items-center">
           <Link
             href="/"
-            className="font-medium text-zenite-primary hover:text-zinc-900"
+            className="font-semibold text-sm sm:text-base text-zenite-primary hover:text-zinc-900"
           >
             {siteName}
           </Link>
