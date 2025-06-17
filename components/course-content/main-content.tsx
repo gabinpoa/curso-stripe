@@ -60,7 +60,7 @@ export function CourseContentMain({
       <div className="flex-1 overflow-auto flex justify-center">
         <div
           className={
-            "w-full max-w-5xl mx-auto sm:px-3" + (!open ? " md:px-6" : "")
+            "w-full max-w-5xl mx-auto sm:px-3 mt-4" + (!open ? " md:px-6 " : "")
           }
         >
           <Card className="flex-1 p-2 md:p-6 mb-4 md:mb-6 bg-zenite-background-light">

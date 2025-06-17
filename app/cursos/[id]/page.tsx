@@ -16,7 +16,7 @@ export default async function Page({ params }: Props) {
       <SidebarProvider>
         <div className="flex flex-1 flex-col w-full">
           {/* Global Header */}
-          <div className="sticky top-0 z-50 space-y-4 flex flex-col mb-2">
+          <div className="sticky top-0 z-50 space-y-4 flex flex-col">
             <Header />
             <CourseContentSidebarTrigger />
           </div>
