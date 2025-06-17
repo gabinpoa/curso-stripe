@@ -318,6 +318,7 @@ button {
   --color-sidebar: var(--zenite-bg-sidebar);
   --color-zenite-background: var(--zenite-bg);
   --color-zenite-primary: var(--zenite-primary);
+  --color-zenite-primary-light: var(--zenite-primary-light);
   --color-zenite-background-light: var(--zenite-bg-light);
 }
 
