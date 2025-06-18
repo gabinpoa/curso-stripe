@@ -1,14 +1,15 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { Suspense } from "react";
 import CourseContentPageClient from "@/components/course-content/client-page";
 import Fallback from "@/components/course-content/fallback";
 import Header from "@/components/header";
-import { getCourseFromFileSystem } from "@/lib/db/queries";
+import { getCourseFromFileSystem, getVerifiedSession } from "@/lib/db/queries";
 import CourseContentSidebarTrigger from "@/components/course-content/sidebar-trigger";
 import { Lesson } from "@/lib/fs/queries";
 import { orders } from "@/lib/db/schema";
 import { db } from "@/lib/db/drizzle";
+import { and, eq } from "drizzle-orm";
 
 type Props = { params: Promise<{ id: string }> };
 export default async function Page({ params }: Props) {
@@ -43,21 +44,36 @@ async function CourseContentPage({ id }: { id: string }) {
 
   async function updateCompletedLessonsOnDb(lessons: Lesson[]) {
     "use server";
+    const session = await getVerifiedSession();
+    if (!session) {
+      redirect("/sign-in");
+    }
+    const customerId = session.user.customerId;
     const completedLessons = lessons
       .filter((lesson) => lesson.completed)
       .map((lesson) => lesson.id);
     const completedLessonsString = JSON.stringify(completedLessons);
     try {
-      await db.update(orders).set({ completedLessons: completedLessonsString });
+      await db
+        .update(orders)
+        .set({ completedLessons: completedLessonsString })
+        .where(
+          and(eq(orders.productId, id), eq(orders.customerId, customerId))
+        );
     } catch (error) {
       console.error("Server: Failed to update completed lessons in DB:", error);
       throw error; // Re-throw to handle it in the calling function
     }
   }
   return (
-    <CourseContentPageClient
-      updateCompletedLessonsOnDb={updateCompletedLessonsOnDb}
-      courseContent={courseContent}
-    />
+    <>
+      {courseContent.cssContent && courseContent.cssContent.length > 0 && (
+        <style>{courseContent.cssContent}</style>
+      )}
+      <CourseContentPageClient
+        updateCompletedLessonsOnDb={updateCompletedLessonsOnDb}
+        courseContent={courseContent}
+      />
+    </>
   );
 }
