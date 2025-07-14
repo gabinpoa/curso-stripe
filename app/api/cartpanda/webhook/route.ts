@@ -141,6 +141,12 @@ async function handleOrderPaid(body: Record<string, unknown>) {
       { status: 400 }
     );
   }
+  if (!eventOrder.id) {
+    return new Response(
+      JSON.stringify({ error: "Invalid payload: order ID is required" }),
+      { status: 400 }
+    );
+  }
 
   const order = await fetchOrderFromCartpanda(eventOrder);
   if (!order) {
@@ -212,6 +218,12 @@ async function handleOrderRefunded(body: Record<string, unknown>) {
       { status: 400 }
     );
   }
+  if (!eventOrder.id) {
+    return new Response(
+      JSON.stringify({ error: "Invalid payload: order ID is required" }),
+      { status: 400 }
+    );
+  }
 
   const order = await fetchOrderFromCartpanda(eventOrder);
   if (!order) {
@@ -268,10 +280,18 @@ async function handleProductCreated(body: Record<string, unknown>) {
       { status: 400 }
     );
   }
-  const productId = eventProduct.id.toString();
+  const productIdNum = eventProduct.id;
+  if (!productIdNum) {
+    return new Response(
+      JSON.stringify({ error: "Invalid payload: product ID is required" }),
+      { status: 400 }
+    );
+  }
+
+  const productId = productIdNum.toString();
   const product = await cartpanda.getProduct(productId);
   const productToInsert: Product = {
-    id: product.id.toString(),
+    id: productId,
     name: product.title,
     status: product.status === "active" ? "active" : "inactive",
     thumbnail:
@@ -302,12 +322,19 @@ async function handleProductUpdated(body: Record<string, unknown>) {
       { status: 400 }
     );
   }
+  const productIdNum = eventProduct.id;
+  if (!productIdNum) {
+    return new Response(
+      JSON.stringify({ error: "Invalid payload: product ID is required" }),
+      { status: 400 }
+    );
+  }
 
-  const productId = eventProduct.id.toString();
+  const productId = productIdNum.toString();
   const product = await cartpanda.getProduct(productId);
 
   const productToUpdate: Product = {
-    id: product.id.toString(),
+    id: productId,
     name: product.title,
     status: product.status === "active" ? "active" : "inactive",
     thumbnail:
@@ -319,9 +346,17 @@ async function handleProductUpdated(body: Record<string, unknown>) {
   };
 
   await db
-    .update(products)
-    .set(productToUpdate)
-    .where(eq(products.id, productId));
+    .insert(products)
+    .values(productToUpdate)
+    .onDuplicateKeyUpdate({
+      set: {
+        name: productToUpdate.name,
+        status: productToUpdate.status,
+        thumbnail: productToUpdate.thumbnail,
+        description: productToUpdate.description,
+        images: productToUpdate.images,
+      },
+    });
   return new Response(
     JSON.stringify({
       success: true,
