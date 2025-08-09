@@ -2,30 +2,28 @@
 import { useEffect, useState } from "react";
 import { SidebarInset } from "../ui/sidebar";
 import { CourseContentMain } from "./main-content";
-import { Lesson, Product } from "@/lib/fs/queries";
+import { Lesson } from "@/lib/fs/queries";
 import { CourseContentSidebar } from "./sidebar";
 import { getCompletedLessonsFromDb } from "@/lib/actions/course-load-actions";
+import { useCourseData } from "@/lib/context/course-data";
 
 export default function CourseContentPageClient({
-  courseContent,
+  courseId,
   updateCompletedLessonsOnDb,
 }: {
-  courseContent: Product;
+  courseId: string;
   updateCompletedLessonsOnDb: (lessons: Lesson[]) => Promise<void>;
 }) {
+  const { courseData, setCourseData } = useCourseData();
   const [selectedLesson, setSelectedLesson] = useState<Lesson>(
-    courseContent.modules[0].lessons[0]
+    courseData.modules[0].lessons[0]
   );
-  const [courseDataState, setCourseDataState] =
-    useState<Product>(courseContent);
 
   // Fetch completed lessons after mount
   useEffect(() => {
     async function fetchAndUpdateCompletedLessons() {
-      const completedLessonIds = await getCompletedLessonsFromDb(
-        courseContent.id
-      );
-      setCourseDataState((prev) => ({
+      const completedLessonIds = await getCompletedLessonsFromDb(courseId);
+      setCourseData((prev) => ({
         ...prev,
         modules: prev.modules.map((module) => ({
           ...module,
@@ -39,13 +37,12 @@ export default function CourseContentPageClient({
     fetchAndUpdateCompletedLessons().catch((error) => {
       console.error("Failed to fetch completed lessons:", error);
     });
-  }, [courseContent.id]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [courseId]);
 
   // Update selectedLesson when courseData changes to reflect completion status
   useEffect(() => {
-    const allLessons = courseDataState.modules.flatMap(
-      (module) => module.lessons
-    );
+    const allLessons = courseData.modules.flatMap((module) => module.lessons);
     const updatedLesson = allLessons.find(
       (lesson) => lesson.id === selectedLesson.id
     );
@@ -53,14 +50,14 @@ export default function CourseContentPageClient({
     if (updatedLesson && updatedLesson !== selectedLesson) {
       setSelectedLesson(updatedLesson);
     }
-  }, [courseDataState, selectedLesson]);
+  }, [courseData, selectedLesson]);
 
   // Calculate overall progress
-  const totalLessons = courseDataState.modules.reduce(
+  const totalLessons = courseData.modules.reduce(
     (total, module) => total + module.lessons.length,
     0
   );
-  const completedLessons = courseDataState.modules.reduce(
+  const completedLessons = courseData.modules.reduce(
     (total, module) =>
       total + module.lessons.filter((lesson) => lesson.completed).length,
     0
@@ -70,7 +67,7 @@ export default function CourseContentPageClient({
   );
 
   const handleLessonComplete = async (lessonId: string) => {
-    setCourseDataState((prev) => {
+    setCourseData((prev) => {
       const updatedState = {
         ...prev,
         modules: prev.modules.map((module) => ({
@@ -94,7 +91,7 @@ export default function CourseContentPageClient({
   return (
     <>
       <CourseContentSidebar
-        courseDataState={courseDataState}
+        courseDataState={courseData}
         selectedLesson={selectedLesson}
         onLessonSelect={setSelectedLesson}
         onLessonComplete={handleLessonComplete}
@@ -102,7 +99,7 @@ export default function CourseContentPageClient({
       />
       <SidebarInset className="flex-1 overflow-hidden">
         <CourseContentMain
-          courseData={courseDataState}
+          courseData={courseData}
           selectedLesson={selectedLesson}
           onLessonComplete={handleLessonComplete}
           onLessonSelect={setSelectedLesson}

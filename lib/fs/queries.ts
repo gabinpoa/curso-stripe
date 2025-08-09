@@ -23,12 +23,25 @@ export type Module = {
 
 export type ModulePreview = Omit<Module, "lessons">;
 
+export type ProductColors = {
+  bg?: string;
+  "bg-conteudo"?: string;
+  "bg-botao-concluido"?: string;
+  "texto-botao-concluido"?: string;
+  "bg-sidebar"?: string;
+  "texto-sidebar"?: string;
+  "bg-header"?: string;
+  "texto-header"?: string;
+  "bg-botao-sidebar"?: string;
+};
+
 export type Product = {
   id: string;
   name: string;
   thumbnail?: string;
   modules: Module[];
   cssContent?: string; // Optional, contains CSS from product folder if present
+  colors?: ProductColors; // Now with proper autocomplete
 };
 
 export type ProductPreview = Omit<Product, "modules"> & {
@@ -100,8 +113,8 @@ function getLessons(
           .readFileSync(path.join(modulePath, videoFile), "utf8")
           .trim();
         // Ensure the URL is in /embed/ format for iframe embedding
-        if (videoUrl.includes('/play/')) {
-          videoUrl = videoUrl.replace('/play/', '/embed/');
+        if (videoUrl.includes("/play/")) {
+          videoUrl = videoUrl.replace("/play/", "/embed/");
         }
         return {
           id: uniqueLessonId,
@@ -145,7 +158,24 @@ function getProductCssContent(productPath: string): string | undefined {
   return undefined;
 }
 
-// 1. Load full product (all modules and lessons)
+// Helper to parse colors from colors.txt
+function parseColors(productPath: string): ProductColors | undefined {
+  const colorsPath = path.join(productPath, "colors.txt");
+  if (!fs.existsSync(colorsPath)) return undefined;
+
+  const lines = fs.readFileSync(colorsPath, "utf8").split("\n");
+  const colors: Record<string, string> = {};
+
+  for (const line of lines) {
+    if (!line.trim() || !line.includes("=")) continue;
+    const [key, value] = line.split("=");
+    if (key && value) {
+      colors[key.trim()] = value.trim();
+    }
+  }
+
+  return Object.keys(colors).length > 0 ? (colors as ProductColors) : undefined;
+} // 1. Load full product (all modules and lessons)
 export function loadFullProduct(
   productsPath: string,
   productId: string
@@ -154,8 +184,9 @@ export function loadFullProduct(
   if (!fs.existsSync(productPath)) return null;
   const names = parseNames(productPath);
   const productName = names["product"] || productId;
-  const thumbnail = getThumbnailFromNames(names); // Now just the public path
+  const thumbnail = getThumbnailFromNames(names);
   const cssContent = getProductCssContent(productPath);
+  const colors = parseColors(productPath); // Add colors parsing
 
   const modules = getModuleList(productPath).map(
     ({ id: moduleId, order, isExtra }) => {
@@ -177,6 +208,7 @@ export function loadFullProduct(
     thumbnail,
     modules,
     cssContent,
+    colors, // Include colors in return
   };
 }
 
@@ -189,8 +221,9 @@ export function loadRestrictedProduct(
   if (!fs.existsSync(productPath)) return null;
   const names = parseNames(productPath);
   const productName = names["product"] || productId;
-  const thumbnail = getThumbnailFromNames(names); // Now just the public path
+  const thumbnail = getThumbnailFromNames(names);
   const cssContent = getProductCssContent(productPath);
+  const colors = parseColors(productPath); // Add colors parsing
 
   const lockedHtml = `<h2>Os módulos extras ficam disponíveis 7 dias após a compra</h2>`;
 
@@ -216,6 +249,7 @@ export function loadRestrictedProduct(
     thumbnail,
     modules,
     cssContent,
+    colors, // Include colors in return
   };
 }
 
@@ -229,6 +263,7 @@ export function loadProductPreview(
   const names = parseNames(productPath);
   const productName = names["product"] || productId;
   const thumbnail = getThumbnailFromNames(names);
+  const colors = parseColors(productPath); // Add colors parsing
 
   const modules: ModulePreview[] = getModuleList(productPath).map(
     ({ id: moduleId, order, isExtra }) => ({
@@ -244,5 +279,6 @@ export function loadProductPreview(
     name: productName,
     thumbnail,
     modules,
+    colors, // Include colors in return
   };
 }

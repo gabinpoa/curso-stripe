@@ -1,6 +1,7 @@
 import { Lesson } from "@/lib/fs/queries";
 import { Button } from "../ui/button";
 import { Check } from "lucide-react";
+import { useCourseData } from "@/lib/context/course-data";
 
 export default function CompletedButton({
   selectedLesson,
@@ -9,11 +10,20 @@ export default function CompletedButton({
   selectedLesson: Lesson;
   onLessonComplete: (lessonId: string) => void;
 }) {
+  const { courseData } = useCourseData();
   return (
     <Button
-      variant={selectedLesson.completed ? "secondary" : "default"}
+      variant={selectedLesson.completed ? "secondary" : "zenite"}
       onClick={() => onLessonComplete(selectedLesson.id)}
-      className="flex py-5 items-center gap-2 flex-shrink-0 text-sm w-full sm:w-auto"
+      className={`flex ${
+        courseData.colors?.["bg-botao-concluido"]
+          ? courseData.colors["bg-botao-concluido"]
+          : "bg-zenite-button-neutral"
+      } ${
+        courseData.colors?.["texto-botao-concluido"]
+          ? courseData.colors["texto-botao-concluido"]
+          : "text-zenite-background-light-neutral"
+      } py-5 items-center gap-2 flex-shrink-0 text-sm w-full sm:w-auto`}
       size="sm"
     >
       {selectedLesson.completed ? (

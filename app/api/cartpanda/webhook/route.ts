@@ -20,6 +20,10 @@ async function fetchOrderFromCartpanda(
   eventOrder: OrderPaidWebhook["order"] | OrderRefundedWebhook["order"]
 ) {
   try {
+    if (!eventOrder.id) {
+      console.error("No order ID provided");
+      return null;
+    }
     const orderResponse = await cartpanda.getOrder(eventOrder.id.toString());
     return orderResponse.order;
   } catch (error) {
@@ -38,7 +42,9 @@ function getCustomerId(
   // CartpandaOrder: customer_id (number|string), customer: { id: number|string, email: string }
   // Webhook order: customer_id (number|string), customer: { id: number|string, email: string }
   // All types should have these fields
-  return order.customer_id?.toString() || order.customer?.id?.toString();
+  const customerId =
+    order.customer_id?.toString() || order.customer?.id?.toString();
+  return customerId || null;
 }
 
 type WebhookLineItem = {
@@ -73,9 +79,14 @@ function getOrderLineItems(
   );
 
   function getProductId(item: CartpandaLineItem | WebhookLineItem): string {
-    if ("product_id" in item && item.product_id !== undefined)
+    if (
+      "product_id" in item &&
+      item.product_id !== undefined &&
+      item.product_id !== null
+    )
       return String(item.product_id);
-    if ("id" in item && item.id !== undefined) return String(item.id);
+    if ("id" in item && item.id !== undefined && item.id !== null)
+      return String(item.id);
     return "";
   }
 
@@ -154,7 +165,12 @@ async function handleOrderPaid(body: Record<string, unknown>) {
       status: 500,
     });
   }
-  const orderId = order.id.toString();
+  const orderId = order.id?.toString();
+  if (!orderId) {
+    return new Response(JSON.stringify({ error: "No order ID found" }), {
+      status: 400,
+    });
+  }
   const orderToken = order.token;
   const customerId = getCustomerId(order);
   if (!customerId) {
@@ -231,7 +247,12 @@ async function handleOrderRefunded(body: Record<string, unknown>) {
       status: 500,
     });
   }
-  const orderId = order.id.toString();
+  const orderId = order.id?.toString();
+  if (!orderId) {
+    return new Response(JSON.stringify({ error: "No order ID found" }), {
+      status: 400,
+    });
+  }
   const orderUpdatedAt = new Date(order.updated_at);
   const email = order.customer.email;
   const lineItems = getOrderLineItems(eventOrder, order, body.event as string);
@@ -281,35 +302,50 @@ async function handleProductCreated(body: Record<string, unknown>) {
     );
   }
   const productIdNum = eventProduct.id;
-  if (!productIdNum) {
+  if (!productIdNum || typeof productIdNum !== "number") {
     return new Response(
-      JSON.stringify({ error: "Invalid payload: product ID is required" }),
+      JSON.stringify({
+        error: "Invalid payload: product ID is required",
+        reqBody: body,
+      }),
       { status: 400 }
     );
   }
 
   const productId = productIdNum.toString();
-  const product = await cartpanda.getProduct(productId);
-  const productToInsert: Product = {
-    id: productId,
-    name: product.title,
-    status: product.status === "active" ? "active" : "inactive",
-    thumbnail:
-      product.images.length > 0
-        ? product.images[0].url
-        : "/static/placeholder.png",
-    description: null,
-    images: product.images.length > 0 ? JSON.stringify(product.images) : null,
-  };
 
-  await db.insert(products).values(productToInsert);
-  return new Response(
-    JSON.stringify({
-      success: true,
-      message: "Product created event received",
-    }),
-    { status: 200 }
-  );
+  try {
+    const product = (await cartpanda.getProduct(productId)).product;
+    const productToInsert: Product = {
+      id: productId,
+      name: product.title,
+      status: product.status === "active" ? "active" : "inactive",
+      thumbnail:
+        product.images.length > 0
+          ? product.images[0].url
+          : "/static/placeholder.png",
+      description: null,
+      images: product.images.length > 0 ? JSON.stringify(product.images) : null,
+    };
+
+    await db.insert(products).values(productToInsert);
+    return new Response(
+      JSON.stringify({
+        success: true,
+        message: "Product created event received",
+      }),
+      { status: 200 }
+    );
+  } catch (error) {
+    console.error("Error fetching or creating product:", error);
+    return new Response(
+      JSON.stringify({
+        error: "Failed to fetch product from CartPanda or create in database",
+        productId,
+      }),
+      { status: 500 }
+    );
+  }
 }
 
 async function handleProductUpdated(body: Record<string, unknown>) {
@@ -323,53 +359,86 @@ async function handleProductUpdated(body: Record<string, unknown>) {
     );
   }
   const productIdNum = eventProduct.id;
-  if (!productIdNum) {
+  if (!productIdNum || typeof productIdNum !== "number") {
     return new Response(
-      JSON.stringify({ error: "Invalid payload: product ID is required" }),
+      JSON.stringify({
+        error: "Invalid payload: product ID is required",
+        reqBody: body,
+      }),
       { status: 400 }
     );
   }
 
   const productId = productIdNum.toString();
-  const product = await cartpanda.getProduct(productId);
 
-  const productToUpdate: Product = {
-    id: productId,
-    name: product.title,
-    status: product.status === "active" ? "active" : "inactive",
-    thumbnail:
-      product.images.length > 0
-        ? product.images[0].url
-        : "/static/placeholder.png",
-    description: null,
-    images: product.images.length > 0 ? JSON.stringify(product.images) : null,
-  };
+  try {
+    const product = (await cartpanda.getProduct(productId)).product;
 
-  await db
-    .insert(products)
-    .values(productToUpdate)
-    .onDuplicateKeyUpdate({
-      set: {
-        name: productToUpdate.name,
-        status: productToUpdate.status,
-        thumbnail: productToUpdate.thumbnail,
-        description: productToUpdate.description,
-        images: productToUpdate.images,
-      },
-    });
-  return new Response(
-    JSON.stringify({
-      success: true,
-      message: "Product updated event received",
-    }),
-    { status: 200 }
-  );
+    const productToUpdate: Product = {
+      id: productId,
+      name: product.title,
+      status: product.status === "active" ? "active" : "inactive",
+      thumbnail:
+        product.images.length > 0
+          ? product.images[0].url
+          : "/static/placeholder.png",
+      description: null,
+      images: product.images.length > 0 ? JSON.stringify(product.images) : null,
+    };
+
+    await db
+      .insert(products)
+      .values(productToUpdate)
+      .onDuplicateKeyUpdate({
+        set: {
+          name: productToUpdate.name,
+          status: productToUpdate.status,
+          thumbnail: productToUpdate.thumbnail,
+          description: productToUpdate.description,
+          images: productToUpdate.images,
+        },
+      });
+    return new Response(
+      JSON.stringify({
+        success: true,
+        message: "Product updated event received",
+      }),
+      { status: 200 }
+    );
+  } catch (error) {
+    console.error("Error fetching or updating product:", error);
+    return new Response(
+      JSON.stringify({
+        error: "Failed to fetch product from CartPanda or update in database",
+        productId,
+      }),
+      { status: 500 }
+    );
+  }
 }
 
 // --- Main Handler ---
 export async function POST(req: NextRequest) {
-  const body = await req.json();
+  let body;
+  try {
+    body = await req.json();
+  } catch (error) {
+    console.error("Error parsing request body:", error);
+    return new Response(JSON.stringify({ error: "Invalid JSON payload" }), {
+      status: 400,
+    });
+  }
+
   const { event } = body;
+
+  if (!event) {
+    console.error("No event type provided in webhook payload");
+    return new Response(JSON.stringify({ error: "Event type is required" }), {
+      status: 400,
+    });
+  }
+
+  console.log(`Processing webhook event: ${event}`);
 
   try {
     switch (event) {
@@ -382,6 +451,7 @@ export async function POST(req: NextRequest) {
       case "product.updated":
         return await handleProductUpdated(body);
       default:
+        console.error(`Unsupported event type: ${event}`);
         return new Response(
           JSON.stringify({ error: "Unsupported event type" }),
           { status: 400 }
@@ -389,6 +459,12 @@ export async function POST(req: NextRequest) {
     }
   } catch (error) {
     console.error("Error handling webhook:", error);
+    // Log more details about the error
+    if (error instanceof Error) {
+      console.error("Error name:", error.name);
+      console.error("Error message:", error.message);
+      console.error("Error stack:", error.stack);
+    }
     return new Response(JSON.stringify({ error: "Internal server error" }), {
       status: 500,
     });

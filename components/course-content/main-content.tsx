@@ -7,7 +7,7 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
+} from "@/components/ui/main-card";
 import { useSidebar } from "@/components/ui/sidebar";
 import { Lesson, Product } from "@/lib/fs/queries";
 import { LessonNavigation } from "./lesson-navigation";
@@ -63,7 +63,13 @@ export function CourseContentMain({
             "w-full max-w-5xl mx-auto sm:px-3 mt-4" + (!open ? " md:px-6 " : "")
           }
         >
-          <Card className="flex-1 p-2 md:p-6 mb-4 md:mb-6 bg-zenite-background-light">
+          <Card
+            className={`flex-1 p-2 md:p-6 mb-4 md:mb-6 ${
+              courseData.colors?.["bg-conteudo"]
+                ? courseData.colors["bg-conteudo"]
+                : "bg-zenite-background-light-neutral"
+            }`}
+          >
             <CardHeader className="pt-2 md:pt-4">
               <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
                 <CardTitle className="text-lg md:text-2xl flex-1 min-w-0 leading-tight">

@@ -47,8 +47,8 @@ export class CartPanda {
     );
   }
 
-  async getProduct(productId: string): Promise<Product> {
-    return this.request<Product>(`/products/${productId}`);
+  async getProduct(productId: string): Promise<{ product: Product }> {
+    return this.request<{ product: Product }>(`/products/${productId}`);
   }
 
   async getOrders(

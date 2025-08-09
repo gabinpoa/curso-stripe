@@ -229,11 +229,18 @@ button {
   --sidebar-accent-foreground: hsl(240 5.9% 10%);
   --sidebar-border: hsl(220 13% 91%);
   --sidebar-ring: hsl(217.2 91.2% 59.8%);
-  --zenite-primary: #3d2760;
-  --zenite-primary-light: #5b3e8f;
-  --zenite-bg: #e7e2f2;
-  --zenite-bg-light: #fbf9fe;
-  --zenite-bg-sidebar: #f7f4fe;
+
+  --zenite-primary-purple: #3d2760;
+  --zenite-primary-light-purple: #5b3e8f;
+  --zenite-bg-purple: #e7e2f2;
+  --zenite-bg-light-purple: #fbf9fe;
+  --zenite-bg-sidebar-purple: #f7f4fe;
+
+  --zenite-primary-neutral: #212738;
+  --zenite-button-neutral: #0f172a;
+  --zenite-bg-neutral: #e9edf5;
+  --zenite-bg-light-neutral: #f4f4f5;
+  --zenite-bg-sidebar-neutral: #f3f6fb;
 }
 
 /*
@@ -280,13 +287,13 @@ button {
 */
 
 @theme inline {
-  --color-background: var(--zenite-bg);
+  --color-background: var(--zenite-bg-neutral);
   --color-foreground: var(--foreground);
-  --color-card: var(--zenite-bg-light);
+  --color-card: var(--card);
   --color-card-foreground: var(--card-foreground);
   --color-popover: var(--popover);
   --color-popover-foreground: var(--popover-foreground);
-  --color-primary: var(--zenite-primary-light);
+  --color-primary: var(--primary);
   --color-primary-foreground: var(--primary-foreground);
   --color-secondary: var(--secondary);
   --color-secondary-foreground: var(--secondary-foreground);
@@ -308,6 +315,7 @@ button {
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
+
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -315,11 +323,20 @@ button {
   --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
   --color-sidebar-primary: var(--sidebar-primary);
   --color-sidebar-foreground: var(--sidebar-foreground);
-  --color-sidebar: var(--zenite-bg-sidebar);
-  --color-zenite-background: var(--zenite-bg);
-  --color-zenite-primary: var(--zenite-primary);
-  --color-zenite-primary-light: var(--zenite-primary-light);
-  --color-zenite-background-light: var(--zenite-bg-light);
+  --color-sidebar: var(--sidebar);
+
+  --color-zenite-background: var(--zenite-bg-purple);
+  --color-zenite-primary: var(--zenite-primary-purple);
+  --color-zenite-primary-light: var(--zenite-primary-light-purple);
+  --color-zenite-background-light: var(--zenite-bg-light-purple);
+  --color-zenite-background-sidebar: var(--zenite-bg-sidebar-purple);
+
+  --color-zenite-background-neutral: var(--zenite-bg-neutral);
+  --color-zenite-primary-neutral: var(--zenite-primary-neutral);
+  --color-zenite-primary-light-neutral: var(--zenite-primary-light-neutral);
+  --color-zenite-button-neutral: var(--zenite-button-neutral);
+  --color-zenite-background-light-neutral: var(--zenite-bg-light-neutral);
+  --color-zenite-background-sidebar-neutral: var(--zenite-bg-sidebar-neutral);
 }
 
 /*
