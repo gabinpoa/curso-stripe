@@ -15,15 +15,11 @@ export default function CompletedButton({
     <Button
       variant={selectedLesson.completed ? "secondary" : "zenite"}
       onClick={() => onLessonComplete(selectedLesson.id)}
-      className={`flex py-5 items-center gap-2 flex-shrink-0 text-sm w-full sm:w-auto ${
-        courseData.colors?.["bg-botao-concluido"]
-          ? `bg-[${courseData.colors["bg-botao-concluido"]}]`
-          : "bg-zenite-button-neutral"
-      } ${
-        courseData.colors?.["texto-botao-concluido"]
-          ? `text-[${courseData.colors["texto-botao-concluido"]}]`
-          : "text-zenite-background-light-neutral"
-      }`}
+      className="flex py-5 items-center gap-2 flex-shrink-0 text-sm w-full sm:w-auto bg-zenite-button-neutral text-zenite-background-light-neutral"
+      style={{
+        backgroundColor: courseData.colors?.["bg-botao-concluido"] || undefined,
+        color: courseData.colors?.["texto-botao-concluido"] || undefined,
+      }}
       size="sm"
     >
       {selectedLesson.completed ? (

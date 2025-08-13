@@ -46,11 +46,10 @@ export default async function Page({ params }: Props) {
 
   return (
     <div
-      className={`min-h-screen ${
-        courseContent.colors?.bg
-          ? `bg-[${courseContent.colors.bg}]`
-          : "bg-zenite-background-neutral"
-      }`}
+      className="min-h-screen bg-zenite-background-neutral"
+      style={{
+        backgroundColor: courseContent.colors?.bg || undefined,
+      }}
     >
       <SidebarProvider>
         <CourseDataProvider initialData={courseContent}>

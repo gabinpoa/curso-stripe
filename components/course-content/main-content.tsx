@@ -64,11 +64,10 @@ export function CourseContentMain({
           }
         >
           <Card
-            className={`flex-1 p-2 md:p-6 mb-4 md:mb-6 ${
-              courseData.colors?.["bg-conteudo"]
-                ? `bg-[${courseData.colors["bg-conteudo"]}]`
-                : "bg-zenite-background-light-neutral"
-            }`}
+            className="flex-1 p-2 md:p-6 mb-4 md:mb-6 bg-zenite-background-light-neutral"
+            style={{
+              backgroundColor: courseData.colors?.["bg-conteudo"] || undefined,
+            }}
           >
             <CardHeader className="pt-2 md:pt-4">
               <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">

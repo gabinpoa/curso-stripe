@@ -98,11 +98,10 @@ export function CourseContentSidebar({
         <div className="space-y-4">
           <div>
             <h2
-              className={`font-semibold text-lg line-clamp-2 leading-tight ${
-                courseData.colors?.["texto-sidebar"]
-                  ? `text-[${courseData.colors["texto-sidebar"]}]`
-                  : "text-zenite-primary-neutral"
-              }`}
+              className="font-semibold text-lg line-clamp-2 leading-tight text-zenite-primary-neutral"
+              style={{
+                color: courseData.colors?.["texto-sidebar"] || undefined,
+              }}
               title={courseData.name}
             >
               {courseData.name}
