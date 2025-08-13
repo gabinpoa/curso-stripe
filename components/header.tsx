@@ -6,17 +6,17 @@ import { ProductColors } from "@/lib/fs/queries";
 export default function Header({ colors }: { colors?: ProductColors }) {
   return (
     <div
-      className={`${
+      className={`border-b shadow-sm ${
         colors?.["bg-header"]
-          ? colors["bg-header"]
+          ? `bg-[${colors["bg-header"]}]`
           : "bg-zenite-background-light-neutral"
-      } border-b shadow-sm`}
+      }`}
     >
       <header className="container mx-auto py-4 px-4 md:px-6">
         <nav
           className={`flex justify-between items-center ${
             colors?.["texto-header"]
-              ? colors["texto-header"]
+              ? `text-[${colors["texto-header"]}]`
               : "text-zenite-primary-neutral"
           }`}
         >

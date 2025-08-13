@@ -48,7 +48,7 @@ export default async function Page({ params }: Props) {
     <div
       className={`min-h-screen ${
         courseContent.colors?.bg
-          ? courseContent.colors.bg
+          ? `bg-[${courseContent.colors.bg}]`
           : "bg-zenite-background-neutral"
       }`}
     >
