@@ -305,7 +305,11 @@ describe("POST /api/cartpanda/webhook", () => {
   it("returns 500 if a database error occurs", async () => {
     // Mock a database error
     jest.spyOn(db, "insert").mockImplementationOnce(() => {
-      throw new Error("Database error");
+      return {
+        values: () => ({
+          onDuplicateKeyUpdate: () => Promise.reject(new Error("Database error"))
+        })
+      } as any;
     });
 
     // Mock request payload
@@ -337,7 +341,7 @@ describe("POST /api/cartpanda/webhook", () => {
       images: [{ url: "https://example.com/image.png" }],
     };
     const mockGetProduct = cartpanda.getProduct as jest.Mock;
-    mockGetProduct.mockResolvedValue(mockProduct);
+    mockGetProduct.mockResolvedValue({ product: mockProduct });
 
     // Remove product if it already exists
     await db.execute(`DELETE FROM products WHERE id = '999'`);
@@ -347,7 +351,7 @@ describe("POST /api/cartpanda/webhook", () => {
       body: JSON.stringify({
         event: "product.created",
         product: {
-          id: "999",
+          id: 999,
         },
       }),
     });
@@ -390,14 +394,14 @@ describe("POST /api/cartpanda/webhook", () => {
       images: [{ url: "https://example.com/updated.png" }],
     };
     const mockGetProduct = cartpanda.getProduct as jest.Mock;
-    mockGetProduct.mockResolvedValue(mockProduct);
+    mockGetProduct.mockResolvedValue({ product: mockProduct });
 
     const req = new NextRequest("http://localhost/api/cartpanda/webhook", {
       method: "POST",
       body: JSON.stringify({
         event: "product.updated",
         product: {
-          id: "888",
+          id: 888,
         },
       }),
     });
