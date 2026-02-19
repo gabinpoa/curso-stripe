@@ -37,7 +37,7 @@ export const createPasswordAction = validatedActionWithUser(
       };
     }
 
-    revalidateTag(`user:${user.customerId}`);
+    revalidateTag(`user:${user.customerId}`, {expire: 0});
 
     return { success: "Senha criada com sucesso", email: user.email };
   }
