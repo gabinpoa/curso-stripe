@@ -41,6 +41,8 @@ describe("POST /api/cartpanda/webhook", () => {
   let productId: string;
 
   beforeAll(async () => {
+    // Ensure clean state for the test user by removing dependent orders first
+    await db.execute("DELETE FROM orders WHERE customer_id = '456'");
     await db.delete(users).where(eq(users.email, process.env.SEND_TO_EMAIL!));
     // Insert a user for testing (customerId is required)
     await db.insert(users).values({
@@ -65,6 +67,7 @@ describe("POST /api/cartpanda/webhook", () => {
 
   afterAll(async () => {
     try {
+      await db.execute("DELETE FROM orders WHERE customer_id = '456'");
       // Only delete the test user, not all users
       await db.delete(users).where(eq(users.email, process.env.SEND_TO_EMAIL!));
       await db.$client.end(); // Close the database connection
