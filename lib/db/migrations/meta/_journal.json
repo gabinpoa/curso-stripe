@@ -5,43 +5,8 @@
     {
       "idx": 0,
       "version": "5",
-      "when": 1744999804222,
-      "tag": "0000_lumpy_yellowjacket",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "5",
-      "when": 1745291356275,
-      "tag": "0001_yummy_mauler",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "5",
-      "when": 1746244109401,
-      "tag": "0002_calm_mastermind",
-      "breakpoints": true
-    },
-    {
-      "idx": 3,
-      "version": "5",
-      "when": 1746486713614,
-      "tag": "0003_good_darwin",
-      "breakpoints": true
-    },
-    {
-      "idx": 4,
-      "version": "5",
-      "when": 1750188872144,
-      "tag": "0004_hesitant_deadpool",
-      "breakpoints": true
-    },
-    {
-      "idx": 5,
-      "version": "5",
-      "when": 1750189972314,
-      "tag": "0005_silky_hardball",
+      "when": 1769902819645,
+      "tag": "0000_perpetual_magik",
       "breakpoints": true
     }
   ]
