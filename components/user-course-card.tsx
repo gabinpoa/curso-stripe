@@ -27,31 +27,24 @@ interface CourseCardProps {
 }
 
 export default function CourseCard(course: CourseCardProps) {
+  function getImageSrc(thumbnail: Thumbnail): string {
+    switch (thumbnail.origin) {
+      case "filesystem":
+        return new URL(`/product/${course.id}/${thumbnail.path}`, process.env.NEXT_PUBLIC_BASE_URL).href;
+      case "names":
+        return thumbnail.path;
+    } 
+  }
   return (
     <Card key={course.id} className="flex flex-col">
       <CardHeader className="items-center justify-center">
-        {course.thumbnails[0][0] === "public" ? (
           <Image
-            src={course.thumbnails[0][1]}
+            src={getImageSrc(course.thumbnails[0])}
             alt={course.name}
             width={300}
             height={150}
             className="rounded-md object-cover "
           />
-        ) : (
-          <img
-            src={
-              new URL(
-                `/product/${course.id}/${course.thumbnails[0][1]}`,
-                process.env.NEXT_PUBLIC_BASE_URL,
-              ).href
-            }
-            alt={course.name}
-            width={300}
-            height={150}
-            className="rounded-md object-cover "
-          />
-        )}
       </CardHeader>
       <CardContent className="flex-grow">
         <CardTitle className="mb-2">{course.name}</CardTitle>

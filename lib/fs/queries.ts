@@ -1,7 +1,7 @@
 import fs from "fs";
 import path from "path";
 
-export const FALLBACK_THUMBNAIL: Thumbnail = ["public", "placeholder.png"];
+export const FALLBACK_THUMBNAIL: Thumbnail = { origin: "names", path: "/placeholder.png" };
 
 export type Lesson = {
   id: string;
@@ -35,7 +35,10 @@ export type ProductColors = {
   "bg-botao-sidebar"?: string;
 };
 
-export type Thumbnail = ["public" | "product", string];
+export type Thumbnail = {
+  origin: "names" | "filesystem";
+  path: string;
+};
 
 export type Product = {
   id: string;
@@ -79,7 +82,7 @@ function getThumbnailFromFileSystem(
     return path.basename(f, ext).toLowerCase() === "thumbnail";
   });
   // The thumbnail file inside product folder will be accessed via /product/:productId/:filename
-  return thumbnailFile ? ["product", thumbnailFile] : undefined;
+  return thumbnailFile ? { origin: "filesystem", path: thumbnailFile } : undefined;
 }
 
 function getThumbnailInPublicFromNames(
@@ -87,8 +90,9 @@ function getThumbnailInPublicFromNames(
 ): Thumbnail | undefined {
   const thumbnail = names["thumbnail"];
   if (!thumbnail) return undefined;
+  if (thumbnail.startsWith("http")) return { origin: "names", path: thumbnail };
   const publicPath = path.join(process.cwd(), "public", thumbnail);
-  return fs.existsSync(publicPath) ? ["public", thumbnail] : undefined;
+  return fs.existsSync(publicPath) ? { origin: "names", path: thumbnail } : undefined;
 }
 
 function getModuleList(productPath: string) {
@@ -192,7 +196,7 @@ function parseColors(productPath: string): ProductColors | undefined {
   }
 
   return Object.keys(colors).length > 0 ? (colors as ProductColors) : undefined;
-} 
+}
 
 // 1. Load full product (all modules and lessons)
 export function loadFullProduct(
