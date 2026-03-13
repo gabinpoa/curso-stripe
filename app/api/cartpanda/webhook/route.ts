@@ -323,7 +323,7 @@ async function handleProductCreated(body: Record<string, unknown>) {
       thumbnail:
         product.images.length > 0
           ? product.images[0].url
-          : "/static/placeholder.png",
+          : "/placeholder.png",
       description: null,
       images: product.images.length > 0 ? JSON.stringify(product.images) : null,
     };
