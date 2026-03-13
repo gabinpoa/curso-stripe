@@ -30,7 +30,7 @@ export default function CourseCard(course: CourseCardProps) {
   function getImageSrc(thumbnail: Thumbnail): string {
     switch (thumbnail.origin) {
       case "filesystem":
-        return new URL(`/product/${course.id}/${thumbnail.path}`, process.env.NEXT_PUBLIC_BASE_URL).href;
+        return new URL(`/produtos/${course.id}/${thumbnail.path}`, process.env.NEXT_PUBLIC_BASE_URL).href;
       case "names":
         return thumbnail.path;
     } 

@@ -1,7 +1,7 @@
 import { getCustomerBoughtProductsFromFileSystem } from "@/lib/db/queries";
 import CourseCard from "@/components/user-course-card";
 import { Suspense } from "react";
-import { FALLBACK_THUMBNAIL } from "@/lib/fs/queries";
+import { FALLBACK_THUMBNAIL } from "@/lib/utils";
 
 export default function PaginaMeusCursos() {
   return (

@@ -1,7 +1,6 @@
 import fs from "fs";
 import path from "path";
-
-export const FALLBACK_THUMBNAIL: Thumbnail = { origin: "names", path: "/placeholder.png" };
+import { FALLBACK_THUMBNAIL } from "../utils";
 
 export type Lesson = {
   id: string;

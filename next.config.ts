@@ -8,7 +8,7 @@ const nextConfig: NextConfig = {
         protocol: "https",
         hostname: "institutosaber.org",
         port: "",
-        pathname: "produtos/*/thumbnail.*",
+        pathname: "/produtos/*/thumbnail.*",
         search: "",
       },
       {

@@ -2,7 +2,8 @@
 import { CourseContentSidebar } from "./sidebar";
 import { SidebarInset } from "../ui/sidebar";
 import { CourseContentMain } from "./main-content";
-import { FALLBACK_THUMBNAIL, Product } from "@/lib/fs/queries";
+import { Product } from "@/lib/fs/queries";
+import { FALLBACK_THUMBNAIL } from "@/lib/utils";
 
 export default function Fallback() {
   const courseData: Product = {
