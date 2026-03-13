@@ -385,7 +385,7 @@ describe("POST /api/cartpanda/webhook", () => {
       id: "888",
       name: "Old Name",
       status: "inactive",
-      thumbnail: "/static/placeholder.png",
+      thumbnail: "/placeholder.png",
       description: null,
       images: null,
     });
