@@ -31,7 +31,7 @@ export function CourseContentMain({
   // Find current lesson index for navigation
   const allLessons = courseData.modules.flatMap((module) => module.lessons);
   const currentIndex = allLessons.findIndex(
-    (lesson) => lesson.id === selectedLesson.id
+    (lesson) => lesson.id === selectedLesson.id,
   );
   const previousLesson = currentIndex > 0 ? allLessons[currentIndex - 1] : null;
   const nextLesson =
@@ -94,12 +94,15 @@ export function CourseContentMain({
                   ></iframe>
                 </div>
               ) : (
-                <div
-                  className="lesson-content max-w-full"
-                  dangerouslySetInnerHTML={{
-                    __html: selectedLesson.htmlContent || "",
-                  }}
-                />
+                <>
+                  <style>{courseData.cssContent || ""}</style>
+                  <div
+                    className="lesson-content max-w-full"
+                    dangerouslySetInnerHTML={{
+                      __html: selectedLesson.htmlContent || "",
+                    }}
+                  />
+                </>
               )}
             </CardContent>
             <CardFooter>
