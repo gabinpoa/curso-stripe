@@ -2,13 +2,13 @@
 import { CourseContentSidebar } from "./sidebar";
 import { SidebarInset } from "../ui/sidebar";
 import { CourseContentMain } from "./main-content";
-import { Product } from "@/lib/fs/queries";
+import { FALLBACK_THUMBNAIL, Product } from "@/lib/fs/queries";
 
 export default function Fallback() {
   const courseData: Product = {
     id: "",
     name: "Carregando...",
-    thumbnail: "/static/placeholder.jpg",
+    thumbnail: FALLBACK_THUMBNAIL,
     modules: [
       {
         id: "1",

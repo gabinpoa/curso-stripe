@@ -1,7 +1,7 @@
 import fs from "fs";
 import path from "path";
 
-const FALLBACK_THUMBNAIL = "/static/placeholder.png";
+export const FALLBACK_THUMBNAIL: Thumbnail = ["public", "placeholder.png"];
 
 export type Lesson = {
   id: string;
@@ -35,10 +35,12 @@ export type ProductColors = {
   "bg-botao-sidebar"?: string;
 };
 
+export type Thumbnail = ["public" | "product", string];
+
 export type Product = {
   id: string;
   name: string;
-  thumbnail?: string;
+  thumbnail: Thumbnail;
   modules: Module[];
   cssContent?: string; // Optional, contains CSS from product folder if present
   colors?: ProductColors; // Now with proper autocomplete
@@ -67,11 +69,26 @@ function parseNames(productPath: string): Record<string, string> {
   return names;
 }
 
-function getThumbnailFromNames(names: Record<string, string>): string {
+function getThumbnailFromFileSystem(
+  productPath: string,
+): Thumbnail | undefined {
+  // Search for file named "thumbnail" with any image extension
+  const files = fs.readdirSync(productPath);
+  const thumbnailFile = files.find((f) => {
+    const ext = path.extname(f).toLowerCase();
+    return path.basename(f, ext).toLowerCase() === "thumbnail";
+  });
+  // The thumbnail file inside product folder will be accessed via /product/:productId/:filename
+  return thumbnailFile ? ["product", thumbnailFile] : undefined;
+}
+
+function getThumbnailInPublicFromNames(
+  names: Record<string, string>,
+): Thumbnail | undefined {
   const thumbnail = names["thumbnail"];
-  if (!thumbnail) return FALLBACK_THUMBNAIL;
+  if (!thumbnail) return undefined;
   const publicPath = path.join(process.cwd(), "public", thumbnail);
-  return fs.existsSync(publicPath) ? thumbnail : FALLBACK_THUMBNAIL;
+  return fs.existsSync(publicPath) ? ["public", thumbnail] : undefined;
 }
 
 function getModuleList(productPath: string) {
@@ -90,15 +107,15 @@ function getLessons(
   modulePath: string,
   moduleId: string,
   names: Record<string, string>,
-  lockedHtmlContent?: string
+  lockedHtmlContent?: string,
 ): Lesson[] {
   const files = fs.readdirSync(modulePath);
   const lessonIds = Array.from(
     new Set(
       files
         .filter((f) => f.endsWith(".html") || f.endsWith(".video"))
-        .map((f) => f.replace(/\.html$|\.video$/, ""))
-    )
+        .map((f) => f.replace(/\.html$|\.video$/, "")),
+    ),
   );
   return lessonIds
     .map((lessonId) => {
@@ -175,16 +192,21 @@ function parseColors(productPath: string): ProductColors | undefined {
   }
 
   return Object.keys(colors).length > 0 ? (colors as ProductColors) : undefined;
-} // 1. Load full product (all modules and lessons)
+} 
+
+// 1. Load full product (all modules and lessons)
 export function loadFullProduct(
   productsPath: string,
-  productId: string
+  productId: string,
 ): Product | null {
   const productPath = path.join(productsPath, productId);
   if (!fs.existsSync(productPath)) return null;
   const names = parseNames(productPath);
   const productName = names["product"] || productId;
-  const thumbnail = getThumbnailFromNames(names);
+  const thumbnail =
+    getThumbnailFromFileSystem(productPath) ||
+    getThumbnailInPublicFromNames(names) ||
+    FALLBACK_THUMBNAIL;
   const cssContent = getProductCssContent(productPath);
   const colors = parseColors(productPath); // Add colors parsing
 
@@ -199,7 +221,7 @@ export function loadFullProduct(
         isExtra,
         lessons,
       };
-    }
+    },
   );
 
   return {
@@ -215,13 +237,16 @@ export function loadFullProduct(
 // 2. Load restricted product (extra modules have only a locked message)
 export function loadRestrictedProduct(
   productsPath: string,
-  productId: string
+  productId: string,
 ): Product | null {
   const productPath = path.join(productsPath, productId);
   if (!fs.existsSync(productPath)) return null;
   const names = parseNames(productPath);
   const productName = names["product"] || productId;
-  const thumbnail = getThumbnailFromNames(names);
+  const thumbnail =
+    getThumbnailFromFileSystem(productPath) ||
+    getThumbnailInPublicFromNames(names) ||
+    FALLBACK_THUMBNAIL;
   const cssContent = getProductCssContent(productPath);
   const colors = parseColors(productPath); // Add colors parsing
 
@@ -240,7 +265,7 @@ export function loadRestrictedProduct(
         isExtra,
         lessons,
       };
-    }
+    },
   );
 
   return {
@@ -256,13 +281,16 @@ export function loadRestrictedProduct(
 // 3. Load product preview (no lessons)
 export function loadProductPreview(
   productsPath: string,
-  productId: string
+  productId: string,
 ): ProductPreview | null {
   const productPath = path.join(productsPath, productId);
   if (!fs.existsSync(productPath)) return null;
   const names = parseNames(productPath);
   const productName = names["product"] || productId;
-  const thumbnail = getThumbnailFromNames(names);
+  const thumbnail =
+    getThumbnailFromFileSystem(productPath) ||
+    getThumbnailInPublicFromNames(names) ||
+    FALLBACK_THUMBNAIL;
   const colors = parseColors(productPath); // Add colors parsing
 
   const modules: ModulePreview[] = getModuleList(productPath).map(
@@ -271,7 +299,7 @@ export function loadProductPreview(
       name: names[moduleId] || moduleId,
       order,
       isExtra,
-    })
+    }),
   );
 
   return {

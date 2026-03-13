@@ -1,6 +1,7 @@
 import { getCustomerBoughtProductsFromFileSystem } from "@/lib/db/queries";
 import CourseCard from "@/components/user-course-card";
 import { Suspense } from "react";
+import { FALLBACK_THUMBNAIL } from "@/lib/fs/queries";
 
 export default function PaginaMeusCursos() {
   return (
@@ -27,7 +28,7 @@ async function MeusCursosSection() {
         <CourseCard
           key={course.id}
           id={course.id}
-          images={[course.thumbnail || "/static/placeholder.png"]}
+          thumbnails={[course.thumbnail]}
           modules={course.modules}
           description={null}
           name={course.name}
@@ -52,7 +53,7 @@ function LoadingFallback() {
     <CourseCard
       description="Carregando..."
       id="fallback"
-      images={["/static/placeholder.png"]}
+      thumbnails={[FALLBACK_THUMBNAIL]}
       modules={[]}
       name="Carregando... "
       disabled={true}

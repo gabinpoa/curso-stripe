@@ -9,12 +9,13 @@ import { Badge } from "@/components/ui/badge";
 import Image from "next/image";
 import Link from "next/link";
 import { Button } from "./ui/button";
+import { Thumbnail } from "@/lib/fs/queries";
 
 interface CourseCardProps {
   id: string;
   name: string;
   description: string | null;
-  images: string[];
+  thumbnails: [Thumbnail];
   modules: {
     id: string;
     description?: string | null;
@@ -29,13 +30,28 @@ export default function CourseCard(course: CourseCardProps) {
   return (
     <Card key={course.id} className="flex flex-col">
       <CardHeader className="items-center justify-center">
-        <Image
-          src={course.images[0]}
-          alt={course.name}
-          width={300}
-          height={150}
-          className="rounded-md object-cover "
-        />
+        {course.thumbnails[0][0] === "public" ? (
+          <Image
+            src={course.thumbnails[0][1]}
+            alt={course.name}
+            width={300}
+            height={150}
+            className="rounded-md object-cover "
+          />
+        ) : (
+          <img
+            src={
+              new URL(
+                `/product/${course.id}/${course.thumbnails[0][1]}`,
+                process.env.NEXT_PUBLIC_BASE_URL,
+              ).href
+            }
+            alt={course.name}
+            width={300}
+            height={150}
+            className="rounded-md object-cover "
+          />
+        )}
       </CardHeader>
       <CardContent className="flex-grow">
         <CardTitle className="mb-2">{course.name}</CardTitle>

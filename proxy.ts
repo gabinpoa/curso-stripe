@@ -4,6 +4,15 @@ import { signToken, verifyToken } from './lib/auth/token';
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
+
+  const isNextInternalPath =
+    pathname.startsWith('/_next/') || pathname === '/favicon.ico';
+  const isPublicAsset = /\.[^/]+$/.test(pathname);
+
+  if (isNextInternalPath || isPublicAsset) {
+    return NextResponse.next();
+  }
+
   const sessionCookie = request.cookies.get('session');
   const unprotectedPaths = ['/sign-in', '/sign-up', '/magic-link'];
   const isProtectedPath = !unprotectedPaths.some((path) => pathname.startsWith(path));
@@ -41,5 +50,5 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/((?!api|_next/static|_next/image|favicon.ico).*)'],
+  matcher: ['/((?!api|_next/static|_next/image|favicon.ico|.*\\..*).*)'],
 };
